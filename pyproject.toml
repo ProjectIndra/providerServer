@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "providerserver"
+version = "0.1.0"
+description = ""
+authors = ["avinash84319 <avihanvaisri@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+libvirt-python = "^11.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
