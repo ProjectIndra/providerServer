@@ -12,6 +12,7 @@ dotenv.load_dotenv()
 # internal imports
 import virt
 from mngt_server_controllers import heartbeats
+from virt_controllers import telemetry,vmcrud
 
 app = Flask(__name__)
 CORS(app)
@@ -23,6 +24,19 @@ def home():
 
 #heartbeat routes
 app.add_url_rule('/heartbeat', 'heartbeat', heartbeats.check_provider_server, methods=['GET'])
+
+
+#vm routes
+
+##telemetry
+app.add_url_rule("/vm/runningvms","listvms",telemetry.list_running_vms,methods=['GET'])
+app.add_url_rule("/vm/inactivevms","listingactivevms",telemetry.list_inactive_vms,methods=['GET'])
+app.add_url_rule("/vm/getinfo/<name>","getinfo",telemetry.get_vm_info,methods=['GET'])
+
+##creation
+app.add_url_rule("/vm/create/<name>/<vcpus>/<memory>","createvm",vmcrud.create_vm,methods=['GET'])
+app.add_url_rule("/vm/delete/<name>","deletevm",vmcrud.delete_vm,methods=['GET'])
+
 
 
 if __name__ == '__main__':
