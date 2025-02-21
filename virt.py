@@ -1,5 +1,9 @@
 import libvirt
 
+# environment imports
+import dotenv
+dotenv.load_dotenv()
+
 
 def check_connection():
     """
@@ -8,11 +12,11 @@ def check_connection():
     :return: connection object
     """
     # Connect to the system libvirt daemon
-    conn = libvirt.open("qemu:///system")
+    conn = libvirt.open(environ.get('PRV_VIRT_SYSTEM'))
     if conn is None:
-        print("Failed to open connection to qemu:///system")
+        print("Failed to open connection to environ.get('PRV_VIRT_SYSTEM')")
         exit(1)
     return conn
 
 # Connect to the system libvirt daemon
-conn = libvirt.open("qemu:///system")
+conn = libvirt.open(environ.get('PRV_VIRT_SYSTEM'))
