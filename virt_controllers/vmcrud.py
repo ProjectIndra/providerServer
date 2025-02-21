@@ -40,4 +40,17 @@ def delete_vm(name):
         return jsonify({"error": str(e)}), 500
 
 
+def start_vm(name):
+    """
+    This function will start any inactive VM
+    """
+
+    try:
+        domain = conn.lookupByName(name)
+        domain.create()
+        return jsonify({"message": "VM started successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
     

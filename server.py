@@ -36,7 +36,7 @@ app.add_url_rule("/vm/getinfo/<name>","getinfo",telemetry.get_vm_info,methods=['
 ##creation
 app.add_url_rule("/vm/create/<name>/<vcpus>/<memory>","createvm",vmcrud.create_vm,methods=['GET'])
 app.add_url_rule("/vm/delete/<name>","deletevm",vmcrud.delete_vm,methods=['GET'])
-
+app.add_url_rule("/vm/activate/<name>","startvm",vmcrud.start_vm,methods=['GET'])
 
 
 if __name__ == '__main__':
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     virt.check_connection()
 
     # check connection to management server
-    # if not heartbeats.check_managment_server(environ.get('MNGT_URL')):
+    # if not heartbeats.check_managment_server(os.environ.get('MNGT_URL')):
     #     print("Failed to connect to the management server")
     #     exit(1)
 
