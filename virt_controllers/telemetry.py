@@ -46,3 +46,28 @@ def get_vm_info(name):
 
     except libvirt.libvirtError:
         return jsonify({"error":"vm not found"}),500
+
+
+def list_networks():
+    """
+    This function will list all the networks
+    """
+
+    return jsonify({"networks":conn.listNetworks()}),200
+
+def get_network_info(name):
+    """
+    This function will get the info of a network
+    """
+
+    try:
+        network = conn.networkLookupByName(name)
+        info = {
+            "Name": network.name(),
+            "UUID": network.UUIDString(),
+            "Bridge": network.bridgeName(),
+            "Active": network.isActive()
+        }
+        return jsonify(info),200
+    except libvirt.libvirtError:
+        return jsonify({"error":"network not found"}),500

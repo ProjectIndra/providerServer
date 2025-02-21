@@ -12,7 +12,7 @@ dotenv.load_dotenv()
 # internal imports
 import virt
 from mngt_server_controllers import heartbeats
-from virt_controllers import telemetry,vmcrud
+from virt_controllers import telemetry,vmcrud,networkcrud
 
 app = Flask(__name__)
 CORS(app)
@@ -33,10 +33,23 @@ app.add_url_rule("/vm/runningvms","listvms",telemetry.list_running_vms,methods=[
 app.add_url_rule("/vm/inactivevms","listingactivevms",telemetry.list_inactive_vms,methods=['GET'])
 app.add_url_rule("/vm/getinfo/<name>","getinfo",telemetry.get_vm_info,methods=['GET'])
 
-##creation
+##crud
 app.add_url_rule("/vm/create/<name>/<vcpus>/<memory>","createvm",vmcrud.create_vm,methods=['GET'])
 app.add_url_rule("/vm/delete/<name>","deletevm",vmcrud.delete_vm,methods=['GET'])
 app.add_url_rule("/vm/activate/<name>","startvm",vmcrud.start_vm,methods=['GET'])
+
+
+#network routes
+
+##network telemetry
+app.add_url_rule("/network/list","listnetworks",telemetry.list_networks,methods=['GET'])
+app.add_url_rule("/network/getinfo/<name>","getnetworkinfo",telemetry.get_network_info,methods=['GET'])
+
+##network crud
+app.add_url_rule("/network/create/<name>/<bridgeName>","createnetwork",networkcrud.create_network,methods=['GET'])
+app.add_url_rule("/network/activate/<name>","startnetwork",networkcrud.activate_network,methods=['GET'])
+app.add_url_rule("/network/deactivate/<name>","stopnetwork",networkcrud.deactivate_network,methods=['GET'])
+app.add_url_rule("/network/delete/<name>","deletenetwork",networkcrud.delete_network,methods=['GET'])
 
 
 if __name__ == '__main__':
