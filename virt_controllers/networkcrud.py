@@ -25,7 +25,7 @@ def create_network(name,
       <ip address='{ipAddress}' netmask='{netMask}'>
         <dhcp>
           <range start='{ipRangeStart}' end='{ipRangeEnd}'/>
-        </dhcp>
+        </dhcp
       </ip>
     </network>
     """
@@ -35,18 +35,20 @@ def create_network(name,
         f.write(network_xml)
 
     # create network
-    cmd = [
+    cmd1 = [
         "virsh",
         "net-define",
         "/tmp/network.xml",
-        "&&",
+    ]
+    cmd2 = [
         "virsh",
         "net-start",
         name,
     ]
 
     try:
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd1, check=True)
+        subprocess.run(cmd2, check=True)
         return jsonify({"message": "Network created successfully"}), 200
     except subprocess.CalledProcessError as e:
         return jsonify({"error": e.stderr}), 500
@@ -58,18 +60,21 @@ def delete_network(name):
     """
 
     # delete network
-    cmd = [
+    cmd1 = [
         "virsh",
         "net-destroy",
-        name,
-        "&&",
+        name
+    ]
+
+    cmd2 = [
         "virsh",
         "net-undefine",
         name
     ]
 
     try:
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd1, check=True)
+        subprocess.run(cmd2, check=True)
         return jsonify({"message": "Network deleted successfully"}), 200
     except subprocess.CalledProcessError as e:
         return jsonify({"error": e.stderr}), 500
