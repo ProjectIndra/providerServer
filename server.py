@@ -29,14 +29,19 @@ app.add_url_rule('/heartbeat', 'heartbeat', heartbeats.check_provider_server, me
 #vm routes
 
 ##telemetry
-app.add_url_rule("/vm/runningvms","listvms",telemetry.list_running_vms,methods=['GET'])
+app.add_url_rule("/vm/activatedvms","listvms",telemetry.list_running_vms,methods=['GET'])
 app.add_url_rule("/vm/inactivevms","listingactivevms",telemetry.list_inactive_vms,methods=['GET'])
 app.add_url_rule("/vm/getinfo/<name>","getinfo",telemetry.get_vm_info,methods=['GET'])
 
 ##crud
 app.add_url_rule("/vm/create/<name>/<vcpus>/<memory>","createvm",vmcrud.create_vm,methods=['GET'])
+# vm create through qcow file
+app.add_url_rule("/vm/create_qvm/<name>/<vcpus>/<memory>","create_vm_qvm",vmcrud.create_vm_qvm,methods=['GET'])
 app.add_url_rule("/vm/delete/<name>","deletevm",vmcrud.delete_vm,methods=['GET'])
 app.add_url_rule("/vm/activate/<name>","startvm",vmcrud.start_vm,methods=['GET'])
+app.add_url_rule("/vm/ipaddresses","vms-ipaddresses",vmcrud.get_vm_ips,methods=['GET'])
+app.add_url_rule("/vm/ssh/<ip>", "ssh_into_vm", vmcrud.ssh_into_vm, methods=['GET'])
+
 
 
 #network routes
@@ -50,6 +55,7 @@ app.add_url_rule("/network/create/<name>/<bridgeName>","createnetwork",networkcr
 app.add_url_rule("/network/activate/<name>","startnetwork",networkcrud.activate_network,methods=['GET'])
 app.add_url_rule("/network/deactivate/<name>","stopnetwork",networkcrud.deactivate_network,methods=['GET'])
 app.add_url_rule("/network/delete/<name>","deletenetwork",networkcrud.delete_network,methods=['GET'])
+
 
 
 if __name__ == '__main__':
