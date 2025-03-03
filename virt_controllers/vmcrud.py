@@ -139,29 +139,121 @@ def get_vm_ips():
         return []
     
 
-# doing ssh into a VM
+                                                    #  ssh into a VM
 
-def ssh_into_vm(ip):
-    """
-    This function will SSH into a specified vm through it's IP address
-    """
 
-    if not ip:
-        return jsonify({"error": "IP address is required"}), 400
+# Dictionary to store active SSH connections
+ssh_sessions = {}
 
-    username = "subbu"
-    password = "Ubuntu@subbu1103"  # Use SSH keys for better security
+# establishing ssh connection through the IP address
+def establish_ssh(ip):
+    """Establish an SSH connection to the VM."""
+    global ssh_sessions
+
+    if ip in ssh_sessions:
+        return jsonify({"message": f"SSH connection already exists for {ip}"}), 200
 
     try:
-        client = paramiko.SSHClient()
-        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect(ip, username=username, password=password, timeout=5)
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_client.connect(
+            hostname=ip,
+            username="subbu",
+            password="Ubuntu@subbu1103",
+            timeout=10
+        )
+        ssh_sessions[ip] = ssh_client
+        return jsonify({"message": f"SSH connection established for {ip}"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 
-        stdin, stdout, stderr = client.exec_command("hostname")  # Example command
-        output = stdout.read().decode().strip()
-        
-        client.close()
+# checking the active ssh connections
+
+# def check_ssh_status(ip):
+#     """Check if SSH connection exists for a given IP."""
+#     if ip in ssh_sessions:
+#         return jsonify({"status": "connected", "message": f"SSH connection is active for {ip}"}), 200
+#     else:
+#         return jsonify({"status": "disconnected", "message": f"No active SSH connection for {ip}"}), 400
+
+
+
+# executing the command on the vm through the ssh connection
+
+ssh_sessions = {}
+
+
+
+def execute_wireguard_setup():
+    """
+    Execute a command on the VM via an existing SSH connection.
+    """
+
+    peer_public_key = "LCpoU/slQ57/A5Fi585TxpTIII00rdAqFHUAraK67Hk="
+    peer_endpoint = "192.168.1.41:5182"
+    client_id = "123"
+    ip = "192.168.122.172"
+
+    if not ip or not peer_public_key or not peer_endpoint:
+        return jsonify({"error": "Missing required parameters"}), 400
+
+    if ip not in ssh_sessions:
+        return jsonify({"error": "No active SSH connection for this IP"}), 400
+
+    ssh_client = ssh_sessions[ip]
+
+    script = f"""
+    sudo DEBIAN_FRONTEND=noninteractive apt install -y wireguard -o DPkg::Lock::Timeout=30 >/dev/null 2>&1
+
+    PRIVATE_KEY=$(wg genkey)
+    PUBLIC_KEY=$(echo "$PRIVATE_KEY" | wg pubkey)
+
+    WG_CONF="/etc/wireguard/wg_{client_id}.conf"
+    INTERFACE="wg_{client_id}"
+    PRIVATE_IP="10.0.0.2/24"
+    PEER_IP="10.0.0.1"
+
+    sudo tee $WG_CONF > /dev/null << EOL
+[Interface]
+PrivateKey = $PRIVATE_KEY
+Address = $PRIVATE_IP
+ListenPort = 51820
+
+[Peer]
+PublicKey = {peer_public_key}
+Endpoint = {peer_endpoint}
+AllowedIPs = 10.0.0.0/24
+PersistentKeepalive = 25
+EOL
+
+    sudo systemctl enable --now wg-quick@wg_{client_id}
+    sudo systemctl start wg-quick@wg_{client_id}
+    """
+
+    try:
+        stdin, stdout, stderr = ssh_client.exec_command(script)
+        output = stdout.read().decode()
+        error = stderr.read().decode()
+
+        if error:
+            return jsonify({"status": "error", "message": error}), 500
         return jsonify({"status": "success", "output": output}), 200
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# closing the ssh connection of the VM
+def close_ssh(ip):
+    """Close the SSH connection."""
+    global ssh_sessions
+
+    if ip in ssh_sessions:
+        ssh_sessions[ip].close()
+        del ssh_sessions[ip]
+        return jsonify({"message": f"SSH connection closed for {ip}"}), 200
+
+    return jsonify({"error": f"No active SSH connection for {ip}"}), 400
+
+

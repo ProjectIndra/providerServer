@@ -40,7 +40,13 @@ app.add_url_rule("/vm/create_qvm/<name>/<vcpus>/<memory>","create_vm_qvm",vmcrud
 app.add_url_rule("/vm/delete/<name>","deletevm",vmcrud.delete_vm,methods=['GET'])
 app.add_url_rule("/vm/activate/<name>","startvm",vmcrud.start_vm,methods=['GET'])
 app.add_url_rule("/vm/ipaddresses","vms-ipaddresses",vmcrud.get_vm_ips,methods=['GET'])
-app.add_url_rule("/vm/ssh/<ip>", "ssh_into_vm", vmcrud.ssh_into_vm, methods=['GET'])
+
+# ssh routes
+app.add_url_rule("/vm/ssh/establish/<ip>", "establish_ssh_connection_to_vm", vmcrud.establish_ssh, methods=['GET'])
+app.add_url_rule("/vm/ssh/close/<ip>","close_established_connection",vmcrud.close_ssh,methods=['POST'])
+
+app.add_url_rule("/vm/ssh/execute_wireguard_setup","execute_command_to_active_ssh_connection",vmcrud.execute_wireguard_setup,methods=['GET'])
+
 
 
 
