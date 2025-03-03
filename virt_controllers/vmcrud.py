@@ -136,10 +136,7 @@ def get_vm_ips():
         return ip_addresses
     except subprocess.CalledProcessError as e:
         print("getting some error:",e)
-        return []
-    
-
-                                                    #  ssh into a VM
+        return [] #  ssh into a VM
 
 
 # Dictionary to store active SSH connections
@@ -158,8 +155,8 @@ def establish_ssh(ip):
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh_client.connect(
             hostname=ip,
-            username="subbu",
-            password="Ubuntu@subbu1103",
+            username="avinash",
+            password="avinash",
             timeout=10
         )
         ssh_sessions[ip] = ssh_client
@@ -185,63 +182,97 @@ ssh_sessions = {}
 
 
 
+import paramiko
+import os
+
 def execute_wireguard_setup():
     """
-    Execute a command on the VM via an existing SSH connection.
+    Generate a WireGuard configuration file locally, then SCP it to the VM and configure WireGuard using SSH commands.
     """
-
-    peer_public_key = "LCpoU/slQ57/A5Fi585TxpTIII00rdAqFHUAraK67Hk="
-    peer_endpoint = "192.168.1.41:5182"
+    peer_public_key = "Pb1j0VNQYKd7P3W9EfUI3GrzfKDLXv27PCZox3PB5w8="
+    peer_endpoint = "192.168.0.162:51820"
     client_id = "123"
-    ip = "192.168.122.172"
+    vm_ip = "192.168.122.210"
+    sudo_password = "avinash"  # Replace with actual sudo password
+    INTERFACE = f"wg_{client_id}"
+    local_config_path = f"/tmp/{INTERFACE}.conf"
+    remote_temp_path = f"/home/avinash/{INTERFACE}.conf"
+    remote_config_path = f"/etc/wireguard/{INTERFACE}.conf"
 
-    if not ip or not peer_public_key or not peer_endpoint:
-        return jsonify({"error": "Missing required parameters"}), 400
+    if not vm_ip or not peer_public_key or not peer_endpoint:
+        return {"error": "Missing required parameters"}, 400
 
-    if ip not in ssh_sessions:
-        return jsonify({"error": "No active SSH connection for this IP"}), 400
+    if vm_ip not in ssh_sessions:
+        return {"error": "No active SSH connection for this IP"}, 400
 
-    ssh_client = ssh_sessions[ip]
+    ssh_client = ssh_sessions[vm_ip]
 
-    script = f"""
-    sudo DEBIAN_FRONTEND=noninteractive apt install -y wireguard -o DPkg::Lock::Timeout=30 >/dev/null 2>&1
+    # Generate WireGuard keys locally
+    private_key = os.popen("wg genkey").read().strip()
+    if not private_key:
+        return {"error": "Failed to generate WireGuard private key"}, 500
 
-    PRIVATE_KEY=$(wg genkey)
-    PUBLIC_KEY=$(echo "$PRIVATE_KEY" | wg pubkey)
+    public_key = os.popen(f"echo {private_key} | wg pubkey").read().strip()
 
-    WG_CONF="/etc/wireguard/wg_{client_id}.conf"
-    INTERFACE="wg_{client_id}"
-    PRIVATE_IP="10.0.0.2/24"
-    PEER_IP="10.0.0.1"
+    print(f"Private key: {private_key}")
+    print(f"Public key: {public_key}")
 
-    sudo tee $WG_CONF > /dev/null << EOL
-[Interface]
-PrivateKey = $PRIVATE_KEY
-Address = $PRIVATE_IP
+    # Write the WireGuard configuration locally
+    try:
+        with open(local_config_path, "w") as f:
+            f.write(f"""[Interface]
+Address = 10.0.0.2/24
+PrivateKey = {private_key}
 ListenPort = 51820
 
 [Peer]
 PublicKey = {peer_public_key}
 Endpoint = {peer_endpoint}
-AllowedIPs = 10.0.0.0/24
+AllowedIPs = 10.0.0.0/32
 PersistentKeepalive = 25
-EOL
+""")
+    except Exception as e:
+        return {"error": f"Failed to write config file: {str(e)}"}, 500
 
-    sudo systemctl enable --now wg-quick@wg_{client_id}
-    sudo systemctl start wg-quick@wg_{client_id}
-    """
+    # Ensure file exists
+    if not os.path.exists(local_config_path):
+        return {"error": "WireGuard config file was not created"}, 500
 
+    # SCP the file to the VM
     try:
-        stdin, stdout, stderr = ssh_client.exec_command(script)
-        output = stdout.read().decode()
-        error = stderr.read().decode()
+        scp_client = ssh_client.open_sftp()
+        scp_client.put(local_config_path, remote_temp_path)
+        scp_client.close()
+    except Exception as e:
+        return {"error": f"File transfer failed: {str(e)}"}, 500
 
-        if error:
-            return jsonify({"status": "error", "message": error}), 500
-        return jsonify({"status": "success", "output": output}), 200
+    # Execute setup commands via SSH
+    try:
+        commands = [
+            "set -e",  # Stop on error
+            f"echo '{sudo_password}' | sudo -S apt update && sudo apt install -y wireguard",  # Install WireGuard
+            f"echo '{sudo_password}' | sudo -S mv {remote_temp_path} {remote_config_path}",  # Move config
+            f"""echo 'net.ipv4.ip_forward=1' | sudo tee -a /etc/sysctl.conf""",  # Enable IP forwarding
+            f"echo '{sudo_password}' | sudo -S chmod 600 {remote_config_path}",  # Set permissions
+            f"echo '{sudo_password}' | sudo -S wg-quick up {INTERFACE}",  # Start WireGuard
+        ]
+
+        for cmd in commands:
+            stdin, stdout, stderr = ssh_client.exec_command(cmd, get_pty=True)
+            stdin.write(sudo_password + "\n")
+            stdin.flush()
+            error = stderr.read().decode().strip()
+            if error:
+                return {"error": error}, 500
+
+        return {"status": "success", "message": "WireGuard configured successfully","public_key":public_key}, 200
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return {"error": f"SSH command execution failed: {str(e)}"}, 500
+
+    finally:
+        os.remove(local_config_path)  # Cleanup local config file
+
 
 
 # closing the ssh connection of the VM
