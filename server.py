@@ -12,7 +12,7 @@ dotenv.load_dotenv()
 # internal imports
 import virt
 from mngt_server_controllers import heartbeats
-from virt_controllers import telemetry,vmcrud,networkcrud
+from virt_controllers import telemetry, vmcrud, vmssh, networkcrud
 
 app = Flask(__name__)
 CORS(app)
@@ -39,16 +39,14 @@ app.add_url_rule("/vm/create/<name>/<vcpus>/<memory>","createvm",vmcrud.create_v
 app.add_url_rule("/vm/create_qvm/<name>/<vcpus>/<memory>","create_vm_qvm",vmcrud.create_vm_qvm,methods=['GET'])
 app.add_url_rule("/vm/delete/<name>","deletevm",vmcrud.delete_vm,methods=['GET'])
 app.add_url_rule("/vm/activate/<name>","startvm",vmcrud.start_vm,methods=['GET'])
-app.add_url_rule("/vm/ipaddresses","vms-ipaddresses",vmcrud.get_vm_ips,methods=['GET'])
+
 
 # ssh routes
-app.add_url_rule("/vm/ssh/establish/<ip>", "establish_ssh_connection_to_vm", vmcrud.establish_ssh, methods=['GET'])
-app.add_url_rule("/vm/ssh/close/<ip>","close_established_connection",vmcrud.close_ssh,methods=['POST'])
-
-app.add_url_rule("/vm/ssh/execute_wireguard_setup","execute_command_to_active_ssh_connection",vmcrud.execute_wireguard_setup,methods=['GET'])
-
-
-
+# app.add_url_rule("/vm/ssh/establish/<ip>", "establish_ssh_connection_to_vm", vmssh.establish_ssh, methods=['GET'])
+# app.add_url_rule("/vm/ssh/close/<ip>","close_established_connection",vmssh.close_ssh,methods=['POST'])
+app.add_url_rule("/vm/ipaddresses","vms-ipaddresses",vmssh.get_vm_ips,methods=['GET'])
+app.add_url_rule("/vm/ssh/setup_wiregaurd","execute_command_to_active_ssh_connection",vmssh.setup_wireguard,methods=['GET'])
+app.add_url_rule("/vm/ssh/start_wiregaurd","start_wireguard",vmssh.start_wireguard,methods=['GET'])
 
 #network routes
 
