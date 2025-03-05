@@ -68,7 +68,7 @@ def setup_wireguard():
     peer_public_key = "Pb1j0VNQYKd7P3W9EfUI3GrzfKDLXv27PCZox3PB5w8="
     peer_endpoint = "192.168.0.162:51820"
     client_id = "123"
-    vm_ip = "192.168.122.210"
+    vm_ip = "192.168.122.104"
     sudo_password = "avinash"  # Replace with actual sudo password
     INTERFACE = f"wg_{client_id}"
     local_config_path = f"/tmp/{INTERFACE}.conf"
@@ -160,7 +160,7 @@ def start_wireguard():
     INTERFACE = f"wg_{client_id}"
     sudo_password = "avinash"  # Replace with actual sudo password
 
-    vm_ip = "192.168.122.210"
+    vm_ip = "192.168.122.104"
 
     # before that we need to establish the ssh connection
     establish_ssh(vm_ip)

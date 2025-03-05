@@ -25,7 +25,7 @@ def create_network(name,
       <ip address='{ipAddress}' netmask='{netMask}'>
         <dhcp>
           <range start='{ipRangeStart}' end='{ipRangeEnd}'/>
-        </dhcp
+        </dhcp>
       </ip>
     </network>
     """

@@ -38,7 +38,7 @@ def create_vm(name, vcpus, memory, iso_path="/var/lib/libvirt/images/ubuntu-serv
 # Create VM from existing qcow file
 
 
-def create_vm_qvm(name, vcpus, memory, qvm_path="/var/lib/libvirt/images/ubuntu-vm.qcow2"):
+def create_vm_qvm(name, vcpus, memory, qvm_path="/var/lib/libvirt/images/avinash.qcow2"):
     """Creates a VM using an existing QCOW2 disk."""
     
     cmd = [
