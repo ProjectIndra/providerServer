@@ -3,6 +3,9 @@ import base64
 import logging
 import requests
 from flask_cors import CORS, cross_origin
+import threading
+import os
+import time
 
 # environment imports
 import dotenv
@@ -63,6 +66,21 @@ app.add_url_rule("/network/delete/<name>","deletenetwork",networkcrud.delete_net
 
 
 if __name__ == '__main__':
+
+    print("Starting server")
+
+    def send_heartbeat():
+        print("Sending heartbeat to management server")
+        while True:
+            res=heartbeats.check_managment_server(os.environ.get('MNGMT_URL'))
+            if res==0:
+                print("Failed to connect to the management server")
+                exit(1)
+            time.sleep(5)
+
+    # sending heartbeat to management server every 5 seconds using a thread
+    heartbeat_thread = threading.Thread(target=send_heartbeat, args=())
+    heartbeat_thread.start()
 
     # check connection to libvirt daemon
     virt.check_connection()
