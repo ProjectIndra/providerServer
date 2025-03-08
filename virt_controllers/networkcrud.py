@@ -12,7 +12,7 @@ def create_network():
     name = data["name"]
     bridgeName = data.get("bridgeName", "virbr1")
     forwardMode = data.get("forwardMode", "nat")
-    ipAddress = data.get("ipAddress", "192.168.122.100")
+    ipAddress = data.get("ipAddress", "192.168.122.1")
     ipRangeStart = data.get("ipRangeStart", "192.168.122.100")
     ipRangeEnd = data.get("ipRangeEnd", "192.168.122.200")
     netMask = data.get("netMask", "255.255.255.0")

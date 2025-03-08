@@ -48,7 +48,7 @@ app.add_url_rule("/vm/activate","startvm",vmcrud.start_vm,methods=['POST'])
 # ssh routes
 # app.add_url_rule("/vm/ssh/establish/<ip>", "establish_ssh_connection_to_vm", vmssh.establish_ssh, methods=['GET'])
 # app.add_url_rule("/vm/ssh/close/<ip>","close_established_connection",vmssh.close_ssh,methods=['POST   '])
-app.add_url_rule("/vm/ipaddresses","vms-ipaddresses",vmssh.get_vm_ips,methods=['GET'])
+app.add_url_rule("/vm/ipaddresses","vms-ipaddresses",vmssh.get_vm_ips,methods=['POST'])
 app.add_url_rule("/vm/ssh/setup_wiregaurd","execute_command_to_active_ssh_connection",vmssh.setup_wireguard,methods=['POST'])
 app.add_url_rule("/vm/ssh/start_wiregaurd","start_wireguard",vmssh.start_wireguard,methods=['GET'])
 

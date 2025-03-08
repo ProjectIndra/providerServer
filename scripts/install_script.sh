@@ -16,6 +16,11 @@ if [ ! -d "providerServer" ]; then
 else
     echo "Repository already exists. Pulling latest changes..."
     cd providerServer
+    
+    # Stash any local changes
+    git stash
+
+    # Pull the latest changes
     git pull
 fi
 

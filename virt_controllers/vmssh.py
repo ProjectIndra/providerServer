@@ -5,26 +5,50 @@ import re
 
 ssh_sessions = {}
 
-# getting the ip address of the vms
+import subprocess
+import re
+import json
+from flask import request
+
 def get_vm_ips():
     """
-    This function will get the ip addresses of all the VMs of the Host
+    Get the IP address of a specific VM by matching its MAC address from virsh net-dhcp-leases.
     """
+    data = request.get_json()
+    vm_name = data.get("vm", None)
+
+    if not vm_name:
+        return {"error": "VM name not provided"}, 400
 
     try:
-        result = subprocess.run(["virsh", "net-dhcp-leases", "default"], capture_output=True, text=True, check=True)
+        # Step 1: Get MAC address of the VM
+        result = subprocess.run(["virsh", "domiflist", vm_name], capture_output=True, text=True, check=True)
         lines = result.stdout.splitlines()
         
-        ip_addresses = []
+        mac_address = None
         for line in lines:
-            match = re.search(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', line)
-            if match:
-                ip_addresses.append(match.group())
+            parts = line.split()
+            if len(parts) >= 5 and parts[0] != "Interface":
+                mac_address = parts[4]  # The MAC address is in the 5th column
+                break
 
-        return ip_addresses
+        if not mac_address:
+            return {"error": "MAC address not found for VM"}, 404
+
+        # Step 2: Get IP from DHCP leases
+        result = subprocess.run(["virsh", "net-dhcp-leases", "default"], capture_output=True, text=True, check=True)
+        lines = result.stdout.splitlines()
+
+        for line in lines:
+            if mac_address in line:
+                match = re.search(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', line)
+                if match:
+                    return {"vm": vm_name, "ip": match.group()}
+
+        return {"error": "IP address not found for VM"}, 404
     except subprocess.CalledProcessError as e:
-        print("getting some error:",e)
-        return [] #  ssh into a VM
+        return {"error": f"Command failed: {str(e)}"}, 500
+
 
 # establishing ssh connection through the IP address
 def establish_ssh(ip):
@@ -70,7 +94,11 @@ def setup_wireguard():
     peer_public_key = data.get("client_public_key","Pb1j0VNQYKd7P3W9EfUI3GrzfKDLXv27PCZox3PB5w8=")
     peer_endpoint = data.get("client_endpoint","192.168.0.162:51820")
     client_id = data.get("client_id","123")
-    vm_ip = "192.168.122.104"
+    vm_ip = data.get("vm_ip",None)
+
+
+    if not vm_ip:
+        return {"error": "Missing required parameters"}, 400
     sudo_password = "avinash"  # Replace with actual sudo password
     INTERFACE = f"wg_{client_id}"
     local_config_path = f"/tmp/{INTERFACE}.conf"
