@@ -12,9 +12,16 @@ import libvirt
 from virt import conn
 
 
-def create_vm(name, vcpus, memory, iso_path="/var/lib/libvirt/images/ubuntu-server.iso"):
+def create_vm():
     """Creates a VM using virt-install, booting from an ISO (no disk)."""
     
+
+    data = request.get_json()
+    name = data.get("name")
+    vcpus = data.get("vcpus")
+    memory = data.get("memory")
+    iso_path = data.get("iso_path", "/var/lib/libvirt/images/ubuntu-server.iso")
+
     cmd = [
         "virt-install",
         "--name", name,
@@ -38,8 +45,15 @@ def create_vm(name, vcpus, memory, iso_path="/var/lib/libvirt/images/ubuntu-serv
 # Create VM from existing qcow file
 
 
-def create_vm_qvm(name, vcpus, memory, qvm_path="/var/lib/libvirt/images/avinash.qcow2"):
+def create_vm_qvm():
     """Creates a VM using an existing QCOW2 disk."""
+
+    data = request.get_json()
+
+    name = data.get("name")
+    vcpus = data.get("vcpus")
+    memory = data.get("memory")
+    qvm_path = data.get("qvm_path", "/var/lib/libvirt/images/avinsah.qcow2")
     
     cmd = [
         "virt-install",
@@ -62,8 +76,12 @@ def create_vm_qvm(name, vcpus, memory, qvm_path="/var/lib/libvirt/images/avinash
         return jsonify({"error": e.stderr}), 500  # Now returns the actual error message
 
 
-def delete_vm(name):
+def delete_vm():
     """Deletes a VM and removes its storage."""
+
+    data = request.get_json()
+    name = data.get("name")
+
     try:
         conn = libvirt.open(os.environ.get('PRV_VIRT_SYSTEM'))
         if conn is None:
@@ -102,10 +120,12 @@ def extract_disk_path(xml_desc):
     return disk.get("file") if disk is not None else None
 
 
-def start_vm(name):
+def start_vm():
     """
     This function will start any inactive VM
     """
+
+    data = request.get_json()
 
     try:
         domain = conn.lookupByName(name)

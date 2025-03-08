@@ -65,9 +65,11 @@ def setup_wireguard():
     """
     Generate a WireGuard configuration file locally, then SCP it to the VM and configure WireGuard using SSH commands.
     """
-    peer_public_key = "Pb1j0VNQYKd7P3W9EfUI3GrzfKDLXv27PCZox3PB5w8="
-    peer_endpoint = "192.168.0.162:51820"
-    client_id = "123"
+
+    data = request.get_json()
+    peer_public_key = data.get("client_public_key","Pb1j0VNQYKd7P3W9EfUI3GrzfKDLXv27PCZox3PB5w8=")
+    peer_endpoint = data.get("client_endpoint","192.168.0.162:51820")
+    client_id = data.get("client_id","123")
     vm_ip = "192.168.122.104"
     sudo_password = "avinash"  # Replace with actual sudo password
     INTERFACE = f"wg_{client_id}"

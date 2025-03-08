@@ -1,20 +1,21 @@
-from flask import jsonify,request
+from flask import jsonify, request
 import subprocess
 
-#internal import
+# internal import
 from virt import conn
 
-def create_network(name,
-                   bridgeName="virbr1",
-                   forwardMode="nat",
-                   ipAddress="192.168.122.100",
-                   ipRangeStart="192.168.122.100",
-                   ipRangeEnd="192.168.122.200",
-                   netMask="255.255.255.0"
-               ):
+def create_network():
     """
     This function will create a network
     """
+    data = request.get_json()
+    name = data["name"]
+    bridgeName = data.get("bridgeName", "virbr1")
+    forwardMode = data.get("forwardMode", "nat")
+    ipAddress = data.get("ipAddress", "192.168.122.100")
+    ipRangeStart = data.get("ipRangeStart", "192.168.122.100")
+    ipRangeEnd = data.get("ipRangeEnd", "192.168.122.200")
+    netMask = data.get("netMask", "255.255.255.0")
 
     # create network xml
     network_xml = f"""
@@ -53,11 +54,13 @@ def create_network(name,
     except subprocess.CalledProcessError as e:
         return jsonify({"error": e.stderr}), 500
 
-
-def delete_network(name):
+def delete_network():
     """
     This function will delete a network
     """
+
+    data = request.get_json()
+    name = data["name"]
 
     # delete network
     cmd1 = [
@@ -79,10 +82,13 @@ def delete_network(name):
     except subprocess.CalledProcessError as e:
         return jsonify({"error": e.stderr}), 500
 
-def activate_network(name):
+def activate_network():
     """
     This function will activate a network
     """
+
+    data = request.get_json()
+    name = data["name"]
 
     # activate network
     cmd = [
@@ -97,10 +103,13 @@ def activate_network(name):
     except subprocess.CalledProcessError as e:
         return jsonify({"error": e.stderr}), 500
 
-def deactivate_network(name):
+def deactivate_network():
     """
     This function will deactivate a network
     """
+
+    data = request.get_json()
+    name = data["name"]
 
     # deactivate network
     cmd = [

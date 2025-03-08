@@ -44,8 +44,8 @@ def get_vm_info(name):
         
         return jsonify(vm_info),200
 
-    except libvirt.libvirtError:
-        return jsonify({"error":"vm not found"}),500
+    except Exception as e:
+        return jsonify({"error":str(e)}),500
 
 
 def list_networks():
@@ -69,5 +69,5 @@ def get_network_info(name):
             "Active": network.isActive()
         }
         return jsonify(info),200
-    except libvirt.libvirtError:
-        return jsonify({"error":"network not found"}),500
+    except Exception as e:
+        return jsonify({"error":str(e)}),500

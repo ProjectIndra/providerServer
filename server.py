@@ -6,6 +6,7 @@ from flask_cors import CORS, cross_origin
 import threading
 import os
 import time
+import argparse
 
 # environment imports
 import dotenv
@@ -32,23 +33,23 @@ app.add_url_rule('/heartbeat', 'heartbeat', heartbeats.check_provider_server, me
 #vm routes
 
 ##telemetry
-app.add_url_rule("/vm/activatedvms","listvms",telemetry.list_running_vms,methods=['GET'])
+app.add_url_rule("/vm/activevms","listvms",telemetry.list_running_vms,methods=['GET'])
 app.add_url_rule("/vm/inactivevms","listingactivevms",telemetry.list_inactive_vms,methods=['GET'])
 app.add_url_rule("/vm/getinfo/<name>","getinfo",telemetry.get_vm_info,methods=['GET'])
 
 ##crud
-app.add_url_rule("/vm/create/<name>/<vcpus>/<memory>","createvm",vmcrud.create_vm,methods=['GET'])
+app.add_url_rule("/vm/create","createvm",vmcrud.create_vm,methods=['POST'])
 # vm create through qcow file
-app.add_url_rule("/vm/create_qvm/<name>/<vcpus>/<memory>","create_vm_qvm",vmcrud.create_vm_qvm,methods=['GET'])
-app.add_url_rule("/vm/delete/<name>","deletevm",vmcrud.delete_vm,methods=['GET'])
-app.add_url_rule("/vm/activate/<name>","startvm",vmcrud.start_vm,methods=['GET'])
+app.add_url_rule("/vm/create_qvm","create_vm_qvm",vmcrud.create_vm_qvm,methods=['POST'])
+app.add_url_rule("/vm/delete","deletevm",vmcrud.delete_vm,methods=['POST'])
+app.add_url_rule("/vm/activate","startvm",vmcrud.start_vm,methods=['POST'])
 
 
 # ssh routes
 # app.add_url_rule("/vm/ssh/establish/<ip>", "establish_ssh_connection_to_vm", vmssh.establish_ssh, methods=['GET'])
-# app.add_url_rule("/vm/ssh/close/<ip>","close_established_connection",vmssh.close_ssh,methods=['POST'])
+# app.add_url_rule("/vm/ssh/close/<ip>","close_established_connection",vmssh.close_ssh,methods=['POST   '])
 app.add_url_rule("/vm/ipaddresses","vms-ipaddresses",vmssh.get_vm_ips,methods=['GET'])
-app.add_url_rule("/vm/ssh/setup_wiregaurd","execute_command_to_active_ssh_connection",vmssh.setup_wireguard,methods=['GET'])
+app.add_url_rule("/vm/ssh/setup_wiregaurd","execute_command_to_active_ssh_connection",vmssh.setup_wireguard,methods=['POST'])
 app.add_url_rule("/vm/ssh/start_wiregaurd","start_wireguard",vmssh.start_wireguard,methods=['GET'])
 
 #network routes
@@ -58,14 +59,20 @@ app.add_url_rule("/network/list","listnetworks",telemetry.list_networks,methods=
 app.add_url_rule("/network/getinfo/<name>","getnetworkinfo",telemetry.get_network_info,methods=['GET'])
 
 ##network crud
-app.add_url_rule("/network/create/<name>/<bridgeName>","createnetwork",networkcrud.create_network,methods=['GET'])
-app.add_url_rule("/network/activate/<name>","startnetwork",networkcrud.activate_network,methods=['GET'])
-app.add_url_rule("/network/deactivate/<name>","stopnetwork",networkcrud.deactivate_network,methods=['GET'])
-app.add_url_rule("/network/delete/<name>","deletenetwork",networkcrud.delete_network,methods=['GET'])
+app.add_url_rule("/network/create","createnetwork",networkcrud.create_network,methods=['POST'])
+app.add_url_rule("/network/activate","startnetwork",networkcrud.activate_network,methods=['POST'])
+app.add_url_rule("/network/deactivate","stopnetwork",networkcrud.deactivate_network,methods=['POST'])
+app.add_url_rule("/network/delete","deletenetwork",networkcrud.delete_network,methods=['POST'])
 
 
 
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description="Start the server with a specified port.")
+    parser.add_argument('--port', type=int, help="Port to run the server on (default: 5000)")
+    args = parser.parse_args()
+
+    print(f"arguments: {args}")
 
     print("Starting server")
 
@@ -83,11 +90,11 @@ if __name__ == '__main__':
     heartbeat_thread.start()
 
     # check connection to libvirt daemon
-    virt.check_connection()
+    # virt.check_connection()
 
     # check connection to management server
     # if not heartbeats.check_managment_server(os.environ.get('MNGT_URL')):
     #     print("Failed to connect to the management server")
     #     exit(1)
 
-    app.run(debug=True)
+    app.run(port=args.port,host='0.0.0.0')
