@@ -43,6 +43,7 @@ app.add_url_rule("/vm/create","createvm",vmcrud.create_vm,methods=['POST'])
 app.add_url_rule("/vm/create_qvm","create_vm_qvm",vmcrud.create_vm_qvm,methods=['POST'])
 app.add_url_rule("/vm/delete","deletevm",vmcrud.delete_vm,methods=['POST'])
 app.add_url_rule("/vm/activate","startvm",vmcrud.start_vm,methods=['POST'])
+app.add_url_rule("/vm/deactivate","stopvm",vmcrud.stop_vm,methods=['POST'])
 
 
 # ssh routes

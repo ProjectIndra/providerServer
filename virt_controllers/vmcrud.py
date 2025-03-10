@@ -75,6 +75,21 @@ def create_vm_qvm():
     except subprocess.CalledProcessError as e:
         return jsonify({"error": e.stderr}), 500  # Now returns the actual error message
 
+def stop_vm():
+    """
+    This function will stop any active VM
+    """
+
+    data = request.get_json()
+    name = data.get("name")
+
+    try:
+        domain = conn.lookupByName(name)
+        domain.destroy()
+        return jsonify({"message": "VM stopped successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 def delete_vm():
     """Deletes a VM and removes its storage."""
@@ -126,6 +141,7 @@ def start_vm():
     """
 
     data = request.get_json()
+    name = data.get("name")
 
     try:
         domain = conn.lookupByName(name)

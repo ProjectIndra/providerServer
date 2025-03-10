@@ -15,7 +15,7 @@ def get_vm_ips():
     Get the IP address of a specific VM by matching its MAC address from virsh net-dhcp-leases.
     """
     data = request.get_json()
-    vm_name = data.get("vm", None)
+    vm_name = data.get("vm_name", None)
 
     if not vm_name:
         return {"error": "VM name not provided"}, 400
