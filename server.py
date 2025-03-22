@@ -50,8 +50,8 @@ app.add_url_rule("/vm/deactivate","stopvm",vmcrud.stop_vm,methods=['POST'])
 # app.add_url_rule("/vm/ssh/establish/<ip>", "establish_ssh_connection_to_vm", vmssh.establish_ssh, methods=['GET'])
 # app.add_url_rule("/vm/ssh/close/<ip>","close_established_connection",vmssh.close_ssh,methods=['POST   '])
 app.add_url_rule("/vm/ipaddresses","vms-ipaddresses",vmssh.get_vm_ips,methods=['POST'])
-app.add_url_rule("/vm/ssh/setup_wiregaurd","execute_command_to_active_ssh_connection",vmssh.setup_wireguard,methods=['POST'])
-app.add_url_rule("/vm/ssh/start_wiregaurd","start_wireguard",vmssh.start_wireguard,methods=['GET'])
+app.add_url_rule("/vm/ssh/setup_wireguard","execute_command_to_active_ssh_connection",vmssh.setup_wireguard,methods=['POST'])
+app.add_url_rule("/vm/ssh/start_wireguard","start_wireguard",vmssh.start_wireguard,methods=['GET'])
 
 #network routes
 
@@ -98,4 +98,4 @@ if __name__ == '__main__':
     #     print("Failed to connect to the management server")
     #     exit(1)
 
-    app.run(port=args.port,host='0.0.0.0')
+    app.run(port=args.port,host='0.0.0.0',debug=True)

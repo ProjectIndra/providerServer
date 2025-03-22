@@ -2,6 +2,7 @@ from flask import jsonify,request
 import paramiko
 import os
 import re
+import time
 
 ssh_sessions = {}
 
@@ -100,31 +101,46 @@ def setup_wireguard():
     if not vm_ip:
         return {"error": "Missing required parameters"}, 400
     sudo_password = "avinash"  # Replace with actual sudo password
-    INTERFACE = f"wg_{client_id}"
-    local_config_path = f"/tmp/{INTERFACE}.conf"
+    INTERFACE = f"wg_123"
+    local_config_path = f"./tmp/{INTERFACE}.conf"
     remote_temp_path = f"/home/avinash/{INTERFACE}.conf"
     remote_config_path = f"/etc/wireguard/{INTERFACE}.conf"
+
+    os.makedirs(os.path.dirname(local_config_path), exist_ok=True)
 
     # before that we need to establish the ssh connection
     establish_ssh(vm_ip)
 
     if not vm_ip or not peer_public_key or not peer_endpoint:
-        return {"error": "Missing required parameters"}, 400
+        if not vm_ip:
+            return {"error": "VM IP not provided"}, 400
+        if not peer_public_key:
+            return {"error": "Client public key not provided"}, 400
+        if not peer_endpoint:
+            return {"error": "Client endpoint not provided"}, 400
 
     if vm_ip not in ssh_sessions:
         return {"error": "No active SSH connection for this IP"}, 400
 
     ssh_client = ssh_sessions[vm_ip]
 
+    if not ssh_client:
+        print("SSH connection failed")
+        return {"error": "SSH connection failed"}, 500
+
     # Generate WireGuard keys locally
     private_key = os.popen("wg genkey").read().strip()
     if not private_key:
+        print("Failed to generate WireGuard private key")
         return {"error": "Failed to generate WireGuard private key"}, 500
 
     public_key = os.popen(f"echo {private_key} | wg pubkey").read().strip()
 
     print(f"Private key: {private_key}")
     print(f"Public key: {public_key}")
+    print(f"Peer public key: {peer_public_key}")
+    print(f"Peer endpoint: {peer_endpoint}")
+    print(f"VM IP: {vm_ip}")
 
     # Write the WireGuard configuration locally
     try:
@@ -140,29 +156,63 @@ Endpoint = {peer_endpoint}
 AllowedIPs = 10.0.0.0/32
 PersistentKeepalive = 25
 """)
+        time.sleep(0.5)
     except Exception as e:
+        print(e)
         return {"error": f"Failed to write config file: {str(e)}"}, 500
 
     # Ensure file exists
     if not os.path.exists(local_config_path):
         return {"error": "WireGuard config file was not created"}, 500
 
+    # first we need to down the wireguard interface if present and remove the config file
+
+    wiregaurd_config_path = f"/etc/wireguard/"
+
+    try:
+        commands = [
+            "set -e",  # Stop on error
+            # check if the wireguard interface is present
+            f"echo '{sudo_password}' | sudo -S wg-quick show {INTERFACE}",
+            f"echo '{sudo_password}' | sudo -S wg-quick down {INTERFACE}",
+            # delete everything from the wireguard config directory
+            f"echo '{sudo_password}' | sudo -S rm -rf {wiregaurd_config_path}*"
+        ]
+
+        for cmd in commands:
+            stdin, stdout, stderr = ssh_client.exec_command(cmd, get_pty=True)
+            stdin.write(sudo_password + "\n")
+            stdin.flush()
+            error = stderr.read().decode().strip()
+            if error:
+                return {"error": error}, 500
+    except Exception as e:
+        return {"error": f"SSH command execution failed: {str(e)}"}, 500
+
     # SCP the file to the VM
     try:
         scp_client = ssh_client.open_sftp()
-        scp_client.put(local_config_path, remote_temp_path)
+        scp_client.put(local_config_path, remote_temp_path, confirm=True)
+        stdin, stdout, stderr = ssh_client.exec_command(f"ls -l {remote_temp_path} && cat {remote_temp_path}")
+        print("Remote file listing:", stdout.read().decode())
+        print("Remote file errors:", stderr.read().decode())
+
         scp_client.close()
     except Exception as e:
+        print(e)
         return {"error": f"File transfer failed: {str(e)}"}, 500
 
     # Execute setup commands via SSH
     try:
         commands = [
             "set -e",  # Stop on error
+            # if wiregaurd is already installed then up then we need down it first
+            f"echo '{sudo_password}' | sudo -S wg-quick down {INTERFACE}",  # Stop WireGuard
             f"echo '{sudo_password}' | sudo -S apt update && sudo apt install -y wireguard",  # Install WireGuard
             f"echo '{sudo_password}' | sudo -S mv {remote_temp_path} {remote_config_path}",  # Move config
             f"""echo 'net.ipv4.ip_forward=1' | sudo tee -a /etc/sysctl.conf""",  # Enable IP forwarding
             f"echo '{sudo_password}' | sudo -S chmod 600 {remote_config_path}",  # Set permissions
+            f"echo '{sudo_password}' | sudo -S wg-quick up {INTERFACE}",  # Start WireGuard
         ]
 
         for cmd in commands:
@@ -176,10 +226,8 @@ PersistentKeepalive = 25
         return {"status": "success", "message": "WireGuard setup completed successfully", "public_key": public_key}, 200
 
     except Exception as e:
+        print(e)
         return {"error": f"SSH command execution failed: {str(e)}"}, 500
-
-    finally:
-        os.remove(local_config_path)  # Cleanup local config file
 
 
 def start_wireguard():

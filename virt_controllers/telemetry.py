@@ -53,9 +53,11 @@ def list_networks():
     This function will list all the networks
     """
 
-    networks = [ network.name() for network in conn.listAllNetworks() ]
-
-    return jsonify({"networks":networks}),200
+    # first get active networks
+    active_networks = conn.listNetworks()
+    # get inactive networks
+    inactive_networks = conn.listDefinedNetworks()
+    return jsonify({"active_networks": active_networks, "inactive_networks": inactive_networks}),200
 
 def get_network_info(name):
     """

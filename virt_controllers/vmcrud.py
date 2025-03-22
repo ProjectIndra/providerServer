@@ -62,7 +62,6 @@ def create_vm_qvm():
         "--vcpus", str(vcpus),
         f"--disk={qvm_path},format=qcow2",
         "--import",
-        "--os-type", "linux",
         "--os-variant", "ubuntu22.04",
         "--network", "network=default",
         "--graphics", "vnc",
