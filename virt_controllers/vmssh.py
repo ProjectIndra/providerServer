@@ -94,14 +94,14 @@ def setup_wireguard():
     data = request.get_json()
     peer_public_key = data.get("client_public_key","Pb1j0VNQYKd7P3W9EfUI3GrzfKDLXv27PCZox3PB5w8=")
     peer_endpoint = data.get("client_endpoint","192.168.0.162:51820")
-    client_id = data.get("client_id","123")
     vm_ip = data.get("vm_ip",None)
+    client_id = data.get("client_id",123)
 
 
     if not vm_ip:
         return {"error": "Missing required parameters"}, 400
     sudo_password = "avinash"  # Replace with actual sudo password
-    INTERFACE = f"wg_123"
+    INTERFACE = f"wg_{client_id}"
     local_config_path = f"./tmp/{INTERFACE}.conf"
     remote_temp_path = f"/home/avinash/{INTERFACE}.conf"
     remote_config_path = f"/etc/wireguard/{INTERFACE}.conf"
@@ -154,7 +154,7 @@ ListenPort = 51820
 PublicKey = {peer_public_key}
 Endpoint = {peer_endpoint}
 AllowedIPs = 10.0.0.0/32
-PersistentKeepalive = 25
+PersistentKeepalive = 5
 """)
         time.sleep(0.5)
     except Exception as e:
@@ -234,11 +234,19 @@ def start_wireguard():
     """
     Start the WireGuard connection on the VM using SSH commands.
     """
-    client_id = "123"
-    INTERFACE = f"wg_{client_id}"
-    sudo_password = "avinash"  # Replace with actual sudo password
 
-    vm_ip = "192.168.122.104"
+    data = request.get_json()
+
+    client_id = data.get("client_id", 123)
+    INTERFACE = f"wg_{client_id}"
+    vm_ip = data.get("vm_ip", None)
+
+    if not vm_ip:
+        return {"error": "Missing vm_ip parameter"}, 400
+    if not client_id:
+        return {"error": "Missing client_id parameter"}, 400
+
+    sudo_password = "avinash"  # Replace with actual sudo password
 
     # before that we need to establish the ssh connection
     establish_ssh(vm_ip)
@@ -253,13 +261,8 @@ def start_wireguard():
         stdin, stdout, stderr = ssh_client.exec_command(command)
         output = stdout.read().decode().strip()
 
-        if output:
-            # WireGuard interface exists, bring it down
-            command = f"echo '{sudo_password}' | sudo -S wg-quick down {INTERFACE}"
-            stdin, stdout, stderr = ssh_client.exec_command(command)
-            error = stderr.read().decode().strip()
-            if error:
-                return {"error": error}, 500
+        if f'interface: {INTERFACE}' in output:
+            return {"status": "success", "message": output}, 200
 
         # Start WireGuard with new configuration
         command = f"echo '{sudo_password}' | sudo -S wg-quick up {INTERFACE}"
