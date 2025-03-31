@@ -2,9 +2,13 @@
 
 set -e  # Exit immediately if a command exits with a non-zero status
 
-USERNAME="avinash"
 TOKEN="asasdasdsadasd"
 REPO_URL="https://github.com/avinash84319/providerServer.git"  # Corrected repository URL
+
+# installing all the dependencies
+sudo apt-get update
+sudo apt install -y libvirt-dev python3-libvirt
+sudo apt install -y 
 
 # Create the directory and navigate to it
 mkdir -p ~/.indra
@@ -42,6 +46,11 @@ export PATH="$HOME/.local/bin:$PATH"
 export MNGMT_URL="https://globally-above-fowl.ngrok-free.app"
 export PRV_VIRT_SYSTEM="qemu:///system"
 
+# write the environment variables to the .env file
+echo "MNGMT_URL=$MNGMT_URL" > .env
+echo "PRV_VIRT_SYSTEM=$PRV_VIRT_SYSTEM" >> .env
+echo "PROVIDER_SERVER_TOKEN_INIT=$TOKEN" >> .env
+
 # Verify installation
 poetry --version
 
@@ -51,6 +60,9 @@ poetry install --no-root
 # Set environment variables (customize as needed)
 MNGMT_URL="https://globally-above-fowl.ngrok-free.app"
 PRV_VIRT_SYSTEM="qemu:///system"
+
+# sending all the details like authentication token,ngrok link
+# 
 
 # Run the server
 poetry run python server.py --port=6996

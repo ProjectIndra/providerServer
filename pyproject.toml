@@ -13,7 +13,9 @@ dependencies = [
     "python-dotenv (>=1.0.1,<2.0.0)",
     "flask-cors (>=5.0.0,<6.0.0)",
     "libvirt-python (>=11.0.0,<12.0.0)",
-    "paramiko (>=3.5.1,<4.0.0)"
+    "paramiko (>=3.5.1,<4.0.0)",
+    "prometheus-client (>=0.21.1,<0.22.0)",
+    "keyring (>=25.6.0,<26.0.0)"
 ]
 
 

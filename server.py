@@ -15,56 +15,69 @@ dotenv.load_dotenv()
 
 # internal imports
 import virt
-from mngt_server_controllers import heartbeats
+from mngt_server_controllers import heartbeats, auth, env, conf
 from virt_controllers import telemetry, vmcrud, vmssh, networkcrud
+from prometheus import metrics
 
 app = Flask(__name__)
 CORS(app)
+
+app.register_blueprint(metrics.metrics_bp)
+
+def authentication_required(f):
+    def wrapper(*args, **kwargs):
+        token = request.headers.get("Authorization")
+        if token is None:
+            return jsonify({"message":"No token provided"}),401
+
+        if token != os.environ.get("PROVIDER_SERVER_TOKEN"):
+            return jsonify({"message":"Invalid token"}),401
+
+        return f(*args, **kwargs)
+    wrapper.__name__ = f.__name__
+    return wrapper
 
 # home route
 @app.route('/')
 def home():
     return "Welcome to the server"
 
-#heartbeat routes
-app.add_url_rule('/heartbeat', 'heartbeat', heartbeats.check_provider_server, methods=['GET'])
+# heartbeat routes
+app.add_url_rule('/heartbeat', 'heartbeat', authentication_required(heartbeats.check_provider_server), methods=['GET'])
 
+# vm routes
 
-#vm routes
+## telemetry
+app.add_url_rule("/vm/activevms", "listvms", authentication_required(telemetry.list_running_vms), methods=['GET'])
+app.add_url_rule("/vm/inactivevms", "listingactivevms", authentication_required(telemetry.list_inactive_vms), methods=['GET'])
+app.add_url_rule("/vm/getinfo/<name>", "getinfo", authentication_required(telemetry.get_vm_info), methods=['GET'])
 
-##telemetry
-app.add_url_rule("/vm/activevms","listvms",telemetry.list_running_vms,methods=['GET'])
-app.add_url_rule("/vm/inactivevms","listingactivevms",telemetry.list_inactive_vms,methods=['GET'])
-app.add_url_rule("/vm/getinfo/<name>","getinfo",telemetry.get_vm_info,methods=['GET'])
-
-##crud
-app.add_url_rule("/vm/create","createvm",vmcrud.create_vm,methods=['POST'])
+## crud
+app.add_url_rule("/vm/create", "createvm", authentication_required(vmcrud.create_vm), methods=['POST'])
 # vm create through qcow file
-app.add_url_rule("/vm/create_qvm","create_vm_qvm",vmcrud.create_vm_qvm,methods=['POST'])
-app.add_url_rule("/vm/delete","deletevm",vmcrud.delete_vm,methods=['POST'])
-app.add_url_rule("/vm/activate","startvm",vmcrud.start_vm,methods=['POST'])
-app.add_url_rule("/vm/deactivate","stopvm",vmcrud.stop_vm,methods=['POST'])
-
+app.add_url_rule("/vm/create_qvm", "create_vm_qvm", authentication_required(vmcrud.create_vm_qvm), methods=['POST'])
+app.add_url_rule("/vm/delete", "deletevm", authentication_required(vmcrud.delete_vm), methods=['POST'])
+app.add_url_rule("/vm/activate", "startvm", authentication_required(vmcrud.start_vm), methods=['POST'])
+app.add_url_rule("/vm/deactivate", "stopvm", authentication_required(vmcrud.stop_vm), methods=['POST'])
 
 # ssh routes
-# app.add_url_rule("/vm/ssh/establish/<ip>", "establish_ssh_connection_to_vm", vmssh.establish_ssh, methods=['GET'])
-# app.add_url_rule("/vm/ssh/close/<ip>","close_established_connection",vmssh.close_ssh,methods=['POST   '])
-app.add_url_rule("/vm/ipaddresses","vms-ipaddresses",vmssh.get_vm_ips,methods=['POST'])
-app.add_url_rule("/vm/ssh/setup_wireguard","execute_command_to_active_ssh_connection",vmssh.setup_wireguard,methods=['POST'])
-app.add_url_rule("/vm/ssh/start_wireguard","start_wireguard",vmssh.start_wireguard,methods=['GET'])
+# app.add_url_rule("/vm/ssh/establish/<ip>", "establish_ssh_connection_to_vm", authentication_required(vmssh.establish_ssh), methods=['GET'])
+# app.add_url_rule("/vm/ssh/close/<ip>", "close_established_connection", authentication_required(vmssh.close_ssh), methods=['POST'])
+app.add_url_rule("/vm/ipaddresses", "vms-ipaddresses", authentication_required(vmssh.get_vm_ips), methods=['POST'])
+app.add_url_rule("/vm/ssh/setup_wireguard", "execute_command_to_active_ssh_connection", authentication_required(vmssh.setup_wireguard), methods=['POST'])
+app.add_url_rule("/vm/ssh/start_wireguard", "start_wireguard", authentication_required(vmssh.start_wireguard), methods=['GET'])
 
-#network routes
+# network routes
 
-##network telemetry
-app.add_url_rule("/network/list","listnetworks",telemetry.list_networks,methods=['GET'])
-app.add_url_rule("/network/getinfo/<name>","getnetworkinfo",telemetry.get_network_info,methods=['GET'])
+## network telemetry
+app.add_url_rule("/network/list", "listnetworks", authentication_required(telemetry.list_networks), methods=['GET'])
+app.add_url_rule("/network/getinfo/<name>", "getnetworkinfo", authentication_required(telemetry.get_network_info), methods=['GET'])
 
-##network crud
-app.add_url_rule("/network/create","createnetwork",networkcrud.create_network,methods=['POST'])
-app.add_url_rule("/network/activate","startnetwork",networkcrud.activate_network,methods=['POST'])
-app.add_url_rule("/network/deactivate","stopnetwork",networkcrud.deactivate_network,methods=['POST'])
-app.add_url_rule("/network/delete","deletenetwork",networkcrud.delete_network,methods=['POST'])
-
+## network crud
+app.add_url_rule("/network/create", "createnetwork", authentication_required(networkcrud.create_network), methods=['POST'])
+app.add_url_rule("/network/activate", "startnetwork", authentication_required(networkcrud.activate_network), methods=['POST'])
+app.add_url_rule("/network/deactivate", "stopnetwork", authentication_required(networkcrud.deactivate_network), methods=['POST'])
+app.add_url_rule("/network/delete", "deletenetwork", authentication_required(networkcrud.delete_network), methods=['POST'])
 
 
 if __name__ == '__main__':
@@ -73,29 +86,36 @@ if __name__ == '__main__':
     parser.add_argument('--port', type=int, help="Port to run the server on (default: 5000)")
     args = parser.parse_args()
 
-    print(f"arguments: {args}")
-
-    print("Starting server")
-
-    def send_heartbeat():
-        print("Sending heartbeat to management server")
-        while True:
-            res=heartbeats.check_managment_server(os.environ.get('MNGMT_URL'))
-            if res==0:
-                print("Failed to connect to the management server")
-                exit(1)
-            time.sleep(5)
-
-    # sending heartbeat to management server every 5 seconds using a thread
-    heartbeat_thread = threading.Thread(target=send_heartbeat, args=())
-    heartbeat_thread.start()
-
-    # check connection to libvirt daemon
+    # #check connection to libvirt daemon
     # virt.check_connection()
 
-    # check connection to management server
+    # # check connection to management server
     # if not heartbeats.check_managment_server(os.environ.get('MNGT_URL')):
     #     print("Failed to connect to the management server")
     #     exit(1)
+
+    if os.environ.get("PROVIDER_SERVER_TOKEN") is None:
+        if os.environ.get("PROVIDER_SERVER_TOKEN_INIT") is None:
+            print("No INIT token or Normal token found in environment")
+            exit(1)
+        else:
+            print("INIT Token found in environment")
+            print("Requesting token from management server")
+
+            token = auth.get_auth_token(os.environ.get("PROVIDER_SERVER_TOKEN_INIT"))
+
+            if token is None:
+                print("Failed to get token from management server")
+                exit(1)
+            else:
+                print("Token received from management server")
+                env.set_persistent_env_var("PROVIDER_SERVER_TOKEN", token)
+                print("Token saved in environment")
+
+    # get the configerations for max settings for vms
+    config = conf.get_config()
+    print("Configurations received : ",config)
+
+    print("Starting the server")
 
     app.run(port=args.port,host='0.0.0.0',debug=True)

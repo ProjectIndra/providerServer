@@ -29,23 +29,27 @@ def list_inactive_vms():
 # Function to get details of a specific VM
 def get_vm_info(name):
     """
-    this is a function to get info of a vm
+    This function retrieves information about a VM, including CPU, RAM, and storage usage.
     """
-    
     try:
-
         domain = conn.lookupByName(name)
         vm_info = {
             "VM": name,
             "ID": domain.ID(),
             "Running": domain.isActive(),
-            "State": domain.state()
+            "VCPU-Allocated": domain.vcpusFlags(),
+            "RAM-Allocated": domain.maxMemory(),
+            "VCPU-Used": domain.info()[3],
+            "RAM-Used": domain.info()[2],
         }
-        
-        return jsonify(vm_info),200
 
+        # converting into human readable format
+        vm_info["RAM-Allocated"] = int(vm_info['RAM-Allocated'] / 1024)
+        vm_info["RAM-Used"] = int(vm_info['RAM-Used'] / 1024)
+
+        return jsonify(vm_info), 200
     except Exception as e:
-        return jsonify({"error":str(e)}),500
+        return jsonify({"error": str(e)}), 500
 
 
 def list_networks():

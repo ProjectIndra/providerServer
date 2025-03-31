@@ -10,6 +10,7 @@ import libvirt
 
 #internal import
 from virt import conn
+from management_server_controllers import conf
 
 
 def create_vm():
@@ -54,13 +55,25 @@ def create_vm_qvm():
     vcpus = data.get("vcpus")
     memory = data.get("memory")
     qvm_path = data.get("qvm_path", "/var/lib/libvirt/images/avinsah.qcow2")
+
+    # first check if the qvm_path exists
+    if not os.path.exists(qvm_path):
+        return jsonify({"error": f"File '{qvm_path}' does not exist"}),500
+
+    # Then copy the qvm with some other name
+    new_qvm_path = f"/var/lib/libvirt/images/{name}.qcow2"
+
+    try:
+        subprocess.run(["cp", qvm_path, new_qvm_path], check=True)
+    except subprocess.CalledProcessError as e:
+        return jsonify({"error": e.stderr}), 500
     
     cmd = [
         "virt-install",
         "--name", name,
         "--ram", str(memory),
         "--vcpus", str(vcpus),
-        f"--disk={qvm_path},format=qcow2",
+        f"--disk={new_qvm_path},format=qcow2",
         "--import",
         "--os-variant", "ubuntu22.04",
         "--network", "network=default",
@@ -70,6 +83,7 @@ def create_vm_qvm():
 
     try:
         result = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
         return jsonify({"message": "VM (through existing qvm) created successfully"}), 200
     except subprocess.CalledProcessError as e:
         return jsonify({"error": e.stderr}), 500  # Now returns the actual error message
