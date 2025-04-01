@@ -10,7 +10,8 @@ import libvirt
 
 #internal import
 from virt import conn
-from management_server_controllers import conf
+from mngt_server_controllers import conf
+from virt_controllers import telemetry
 
 
 def create_vm():
@@ -162,3 +163,59 @@ def start_vm():
         return jsonify({"message": "VM started successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+def query_vm():
+    """
+    This function will query the status of a VM
+    """
+
+    data = request.get_json()
+    vcpu = data.get("vcpu")
+    memory = data.get("memory")
+
+    try:
+        # first get all vm names
+        active_vms = telemetry.list_running_vms()
+        inactive_vms = telemetry.list_inactive_vms()
+
+        # now get info of each vm of vcpu and memory
+        vms = []
+        vms += active_vms
+        vms += inactive_vms
+
+        # now get the info of each vm
+        vm_info = []
+        for vm in vms:
+            vm_info += telemetry.get_vm_info(vm)
+
+        # now sum up the vcpu and memory
+        total_vcpu = 0
+        total_memory = 0
+
+        for vm in vm_info:
+            total_vcpu += vm["VCPU-Allocated"]
+            total_memory += vm["RAM-Allocated"]
+
+        # now add the vcpu and memory of the new vm
+        total_vcpu += vcpu
+        total_memory += memory
+
+        # first check if max limits are set
+        if not os.environ.get("PROVIDER_SERVER_MAX_VMS"):
+            return jsonify({"error": "Max limits not set"}), 500
+        if not os.environ.get("PROVIDER_SERVER_MAX_CPU"):
+            return jsonify({"error": "Max limits not set"}), 500
+
+        # check with the max limits
+        if total_vcpu > int(os.environ.get("PROVIDER_SERVER_MAX_CPU")):
+            return jsonify({"error": "CPU limit exceeded"}), 500
+
+        if total_memory > int(os.environ.get("PROVIDER_SERVER_MAX_RAM")):
+            return jsonify({"error": "Memory limit exceeded"}), 500
+
+        return jsonify({"message": "VM can be created"}), 200
+
+    except Exception as e:
+
+        return jsonify({"error": str(e)}), 500
+

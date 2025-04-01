@@ -223,7 +223,7 @@ PersistentKeepalive = 5
             if error:
                 return {"error": error}, 500
 
-        return {"status": "success", "message": "WireGuard setup completed successfully", "public_key": public_key}, 200
+        return {"status": "active", "message": "WireGuard setup completed successfully", "public_key": public_key, "wiregaurd_ip":"10.0.0.2"}, 200
 
     except Exception as e:
         print(e)

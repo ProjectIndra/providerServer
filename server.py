@@ -26,7 +26,7 @@ app.register_blueprint(metrics.metrics_bp)
 
 def authentication_required(f):
     def wrapper(*args, **kwargs):
-        token = request.headers.get("Authorization")
+        token = request.headers.get("authorization")
         if token is None:
             return jsonify({"message":"No token provided"}),401
 
@@ -59,6 +59,7 @@ app.add_url_rule("/vm/create_qvm", "create_vm_qvm", authentication_required(vmcr
 app.add_url_rule("/vm/delete", "deletevm", authentication_required(vmcrud.delete_vm), methods=['POST'])
 app.add_url_rule("/vm/activate", "startvm", authentication_required(vmcrud.start_vm), methods=['POST'])
 app.add_url_rule("/vm/deactivate", "stopvm", authentication_required(vmcrud.stop_vm), methods=['POST'])
+app.add_url_rule("/vm/queryvm", "queryvm", authentication_required(vmcrud.query_vm), methods=['POST'])
 
 # ssh routes
 # app.add_url_rule("/vm/ssh/establish/<ip>", "establish_ssh_connection_to_vm", authentication_required(vmssh.establish_ssh), methods=['GET'])
@@ -79,6 +80,9 @@ app.add_url_rule("/network/activate", "startnetwork", authentication_required(ne
 app.add_url_rule("/network/deactivate", "stopnetwork", authentication_required(networkcrud.deactivate_network), methods=['POST'])
 app.add_url_rule("/network/delete", "deletenetwork", authentication_required(networkcrud.delete_network), methods=['POST'])
 
+## conf update route
+app.add_url_rule("/config/update", "updateconfig", authentication_required(conf.update_config), methods=['POST'])
+
 
 if __name__ == '__main__':
 
@@ -88,11 +92,6 @@ if __name__ == '__main__':
 
     # #check connection to libvirt daemon
     # virt.check_connection()
-
-    # # check connection to management server
-    # if not heartbeats.check_managment_server(os.environ.get('MNGT_URL')):
-    #     print("Failed to connect to the management server")
-    #     exit(1)
 
     if os.environ.get("PROVIDER_SERVER_TOKEN") is None:
         if os.environ.get("PROVIDER_SERVER_TOKEN_INIT") is None:
@@ -112,10 +111,13 @@ if __name__ == '__main__':
                 env.set_persistent_env_var("PROVIDER_SERVER_TOKEN", token)
                 print("Token saved in environment")
 
-    # get the configerations for max settings for vms
-    config = conf.get_config()
-    print("Configurations received : ",config)
-
-    print("Starting the server")
+    if os.environ.get("PROVIDER_SERVER_MAX_VMS") is None:
+        print("Requesting configuration from management server")
+        if not conf.get_config():
+            print("Failed to get configuration from management server")
+            exit(1)
+        else:
+            print("Configuration received from management server")
+            print("Configuration saved in environment")
 
     app.run(port=args.port,host='0.0.0.0',debug=True)

@@ -4,6 +4,7 @@ set -e  # Exit immediately if a command exits with a non-zero status
 
 TOKEN="asasdasdsadasd"
 REPO_URL="https://github.com/avinash84319/providerServer.git"  # Corrected repository URL
+NGROK_URL="https://globally-above-fowl.ngrok-free.app"
 
 # installing all the dependencies
 sudo apt-get update
@@ -50,6 +51,7 @@ export PRV_VIRT_SYSTEM="qemu:///system"
 echo "MNGMT_URL=$MNGMT_URL" > .env
 echo "PRV_VIRT_SYSTEM=$PRV_VIRT_SYSTEM" >> .env
 echo "PROVIDER_SERVER_TOKEN_INIT=$TOKEN" >> .env
+echo "NGROK_URL=$NGROK_URL" >> .env
 
 # Verify installation
 poetry --version
