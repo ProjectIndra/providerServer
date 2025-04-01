@@ -93,7 +93,7 @@ if __name__ == '__main__':
     # #check connection to libvirt daemon
     # virt.check_connection()
 
-    if os.environ.get("PROVIDER_SERVER_TOKEN") is None:
+    if os.environ.get("PROVIDER_SERVER_TOKEN") is None or os.environ.get("PROVIDER_SERVER_TOKEN") == "":
         if os.environ.get("PROVIDER_SERVER_TOKEN_INIT") is None:
             print("No INIT token or Normal token found in environment")
             exit(1)

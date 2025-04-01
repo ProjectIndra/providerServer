@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, Blueprint
 from dotenv import load_dotenv
 import requests
+import os
 
 load_dotenv()
 
@@ -28,7 +29,10 @@ def get_config():
     """
 
     try:
-        response = requests.post(os.environ.get("MNGMT_URL") + "/providerServer/getConfig",json={"provider_verification_token": os.environ.get("PROVIDER_SERVER_TOKEN")})
+
+        print(f"Getting config from using token {os.environ.get('PROVIDER_SERVER_TOKEN')}")
+
+        response = requests.post(os.environ.get("MNGMT_URL") + "/providerServer/getConfig",json={"management_server_verification_token": os.environ.get("PROVIDER_SERVER_TOKEN")})
         if response.status_code == 200:
 
             os.environ["PROVIDER_SERVER_MAX_VMS"] = str(response.json()["max_vms"])
@@ -42,4 +46,5 @@ def get_config():
             print(f"An error occurred: {response.json()}")
             return False
     except Exception as e:
+        print(f"An error occurred: {str(e)}")
         return False

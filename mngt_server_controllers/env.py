@@ -1,42 +1,42 @@
-import tempfile
-import shutil
 import os
-import subprocess
 
-def set_persistent_env_var(key, value):
-    """
-    Set or update a persistent environment variable in /etc/environment.
-    The change is immediately applied and persists after reboots.
-    
-    Requires root privileges.
-    """
-    env_file = "/etc/environment"
-    temp_file = tempfile.NamedTemporaryFile(mode="w", delete=False)
+def load_env(env_file=".env"):
+    if os.path.exists(env_file):
+        with open(env_file, "r") as f:
+            for line in f:
+                key, value = line.strip().split("=", 1)
+                os.environ[key] = value.strip('"')
 
-    try:
-        with open(env_file, "r") as f, temp_file:
-            updated = False
+def set_persistent_env_var(key, value, env_file=".env"):
+    """
+    Set or update an environment variable in a project-specific .env file.
+    The change does not persist globally but can be sourced manually.
+    """
+
+    lines = []
+    updated = False
+
+    # Read existing .env file if it exists
+    if os.path.exists(env_file):
+        with open(env_file, "r") as f:
             for line in f:
                 if line.strip().startswith(f"{key}="):  
-                    temp_file.write(f'{key}="{value}"\n')  # Update existing key
+                    lines.append(f'{key}="{value}"\n')  # Update existing key
                     updated = True
                 else:
-                    temp_file.write(line)
+                    lines.append(line)
 
-            if not updated:  
-                temp_file.write(f'{key}="{value}"\n')  # Add new key if missing
+    if not updated:  
+        lines.append(f'{key}="{value}"\n')  # Add new key if missing
 
-        # Replace original file safely
-        shutil.move(temp_file.name, env_file)
+    # Write back to .env file
+    with open(env_file, "w") as f:
+        f.writelines(lines)
 
-        # Apply changes immediately
-        subprocess.run(["source", env_file], shell=True, check=False)
-        os.environ[key] = value  # Update current process environment
+    # now update the environment variable
+    load_env(env_file)
 
-        print(f"✅ Successfully set {key} in {env_file} and reloaded environment.")
+    print(f"✅ Successfully set {key} in {env_file}.")
 
-    except Exception as e:
-        print(f"❌ Error updating {env_file}: {e}")
-    finally:
-        if os.path.exists(temp_file.name):
-            os.remove(temp_file.name)  # Cleanup if error occurs
+if __name__ == "__main__":
+    set_persistent_env_var("MY_VARIABLE", "hello_world")
