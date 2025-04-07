@@ -28,6 +28,7 @@ def authentication_required(f):
     def wrapper(*args, **kwargs):
         token = request.headers.get("authorization")
         if token is None:
+            print(request.headers)  
             return jsonify({"message":"No token provided"}),401
 
         if token != os.environ.get("PROVIDER_SERVER_TOKEN"):

@@ -2,6 +2,13 @@ import os
 import psutil
 
 def get_system_info():
+    """
+    This function retrieves the system information including:
+    - Number of CPUs
+    - Total RAM in GB
+    - Maximum disk space in GB
+    """
+
     num_cpus = os.cpu_count()
     total_ram = psutil.virtual_memory().total / (1024 ** 3)  # Convert to GB
     disk_partitions = psutil.disk_partitions()

@@ -52,34 +52,41 @@ def create_vm_qvm():
 
     data = request.get_json()
 
+    print(f"Data received: {data}")
+
     name = data.get("name")
     vcpus = data.get("vcpus")
     memory = data.get("memory")
-    qvm_path = data.get("qvm_path", "/var/lib/libvirt/images/avinsah.qcow2")
+    qvm_path = data.get("qvm_path", "./images/avinash.qcow2")
 
-    # first check if the qvm_path exists
-    if not os.path.exists(qvm_path):
-        return jsonify({"error": f"File '{qvm_path}' does not exist"}),500
+    if not name or not vcpus or not memory:
+        return jsonify({"error": "Missing required parameters"}), 400
+
+    # # first check if the qvm file exists
+    # if not os.path.exists(qvm_path):
+    #     return jsonify({"error": f"File '{qvm_path}' does not exist"}),500
 
     # Then copy the qvm with some other name
-    new_qvm_path = f"/var/lib/libvirt/images/{name}.qcow2"
+    # new_qvm_path = f"./images/{name}.qcow2"
 
-    try:
-        subprocess.run(["cp", qvm_path, new_qvm_path], check=True)
-    except subprocess.CalledProcessError as e:
-        return jsonify({"error": e.stderr}), 500
+    # try:
+    #     subprocess.run(["cp", qvm_path, new_qvm_path], check=True)
+    # except subprocess.CalledProcessError as e:
+    #     print(f"Error copying file: {e}")
+    #     return jsonify({"error": e.stderr}), 500
     
     cmd = [
-        "virt-install",
-        "--name", name,
-        "--ram", str(memory),
-        "--vcpus", str(vcpus),
-        f"--disk={new_qvm_path},format=qcow2",
-        "--import",
-        "--os-variant", "ubuntu22.04",
-        "--network", "network=default",
-        "--graphics", "vnc",
-        "--noautoconsole"
+    "virt-install",
+    "--name", name,
+    "--ram", str(memory),
+    "--vcpus", str(vcpus),
+    f"--disk={qvm_path},format=qcow2",
+    "--import",
+    "--check", "path_in_use=off",
+    "--os-variant", "ubuntu22.04",
+    "--network", "network=default",
+    "--graphics", "vnc",
+    "--noautoconsole"
     ]
 
     try:
@@ -87,6 +94,7 @@ def create_vm_qvm():
 
         return jsonify({"message": "VM (through existing qvm) created successfully"}), 200
     except subprocess.CalledProcessError as e:
+        print(f"Error creating VM: {e.stderr}")
         return jsonify({"error": e.stderr}), 500  # Now returns the actual error message
 
 def stop_vm():

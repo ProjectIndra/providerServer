@@ -18,6 +18,8 @@ def get_vm_ips():
     data = request.get_json()
     vm_name = data.get("vm_name", None)
 
+    print(f"VM Name: {vm_name}")
+
     if not vm_name:
         return {"error": "VM name not provided"}, 400
 
@@ -44,6 +46,7 @@ def get_vm_ips():
             if mac_address in line:
                 match = re.search(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', line)
                 if match:
+                    print({"vm": vm_name, "ip": match.group()})
                     return {"vm": vm_name, "ip": match.group()}
 
         return {"error": "IP address not found for VM"}, 404

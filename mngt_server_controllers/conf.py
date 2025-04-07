@@ -7,7 +7,7 @@ load_dotenv()
 
 def update_config():
     """
-    This is a function to get the configuration
+    This is a function to update the configuration
     """
 
     try:
