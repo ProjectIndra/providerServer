@@ -141,8 +141,8 @@ def delete_vm():
         domain.undefine()
 
         # Remove the disk file if it exists
-        if disk_path and os.path.exists(disk_path):
-            os.remove(disk_path)
+        # if disk_path and os.path.exists(disk_path):
+        #     os.remove(disk_path)
 
         return jsonify({"message": f"VM '{name}' deleted successfully"}), 200
 
