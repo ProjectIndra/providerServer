@@ -8,7 +8,7 @@ import os
 import time
 import argparse
 
-# environment imports
+# environment import
 import dotenv
 dotenv.load_dotenv()
 
