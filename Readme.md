@@ -6,6 +6,12 @@ first make sure you have libvirt installed on your system.
 sudo apt install -y libvirt-dev python3-libvirt
 ```
 
+also make sure you have given correct permissions to the user to access the libvirt.
+```bash
+sudo chown -R avinash:avinash /home/avinash/cloud_project/providerServer/images/
+sudo chmod -R 775 /home/avinash/cloud_project/providerServer/images/
+```
+
 then to verify that libvirt is installed correctly, run the following command:
 
 ```bash

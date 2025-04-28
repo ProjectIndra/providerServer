@@ -48,54 +48,62 @@ def create_vm():
 
 
 def create_vm_qvm():
-    """Creates a VM using an existing QCOW2 disk."""
+    """Creates a VM using a delta QCOW2 disk based on a base image."""
 
     data = request.get_json()
-
     print(f"Data received: {data}")
 
     name = data.get("name")
     vcpus = data.get("vcpus")
     memory = data.get("memory")
-    qvm_path = data.get("qvm_path", "./images/avinash.qcow2")
+    qvm_path = "avinash.qcow2" # Base image path
+    images_dir = "./images"  # Directory where delta images are stored
 
     if not name or not vcpus or not memory:
         return jsonify({"error": "Missing required parameters"}), 400
 
-    # # first check if the qvm file exists
-    # if not os.path.exists(qvm_path):
-    #     return jsonify({"error": f"File '{qvm_path}' does not exist"}),500
+    # Check if base qvm file exists
+    if not os.path.exists(images_dir+"/"+qvm_path):
+        return jsonify({"error": f"Base image '{qvm_path}' does not exist"}), 500
 
-    # Then copy the qvm with some other name
-    # new_qvm_path = f"./images/{name}.qcow2"
+    # Create delta (backed) qcow2
+    new_qvm_path = os.path.join(images_dir, f"{name}.qcow2")
 
-    # try:
-    #     subprocess.run(["cp", qvm_path, new_qvm_path], check=True)
-    # except subprocess.CalledProcessError as e:
-    #     print(f"Error copying file: {e}")
-    #     return jsonify({"error": e.stderr}), 500
-    
+    try:
+        subprocess.run([
+            "qemu-img", "create",
+            "-f", "qcow2",    # Output disk format
+            "-F", "qcow2",    # Backing file format
+            "-b", qvm_path,  # Absolute path to base image
+            new_qvm_path
+        ], check=True)
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error creating delta disk: {e}")
+        return jsonify({"error": "Failed to create delta qcow2"}), 500
+
+
+    # Now use the delta disk in virt-install
     cmd = [
-    "virt-install",
-    "--name", name,
-    "--ram", str(memory),
-    "--vcpus", str(vcpus),
-    f"--disk={qvm_path},format=qcow2",
-    "--import",
-    "--check", "path_in_use=off",
-    "--os-variant", "ubuntu22.04",
-    "--network", "network=default",
-    "--graphics", "vnc",
-    "--noautoconsole"
+        "virt-install",
+        "--name", name,
+        "--ram", str(memory),
+        "--vcpus", str(vcpus),
+        f"--disk={new_qvm_path},format=qcow2",
+        "--import",
+        "--check", "path_in_use=off",
+        "--os-variant", "ubuntu22.04",
+        "--network", "network=default",
+        "--graphics", "vnc",
+        "--noautoconsole"
     ]
 
     try:
         result = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-
-        return jsonify({"message": "VM (through existing qvm) created successfully"}), 200
+        return jsonify({"message": "VM created successfully using delta disk"}), 200
     except subprocess.CalledProcessError as e:
         print(f"Error creating VM: {e.stderr}")
-        return jsonify({"error": e.stderr}), 500  # Now returns the actual error message
+        return jsonify({"error": e.stderr}), 500
 
 def stop_vm():
     """
