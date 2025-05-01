@@ -186,52 +186,78 @@ def query_vm():
     """
 
     data = request.get_json()
-    vcpu = data.get("vcpu")
-    memory = data.get("memory")
+
+    # Check for missing or invalid data in request
+    if "vcpu" not in data or "memory" not in data:
+        return jsonify({"error": "vcpu and memory must be provided"}), 400
 
     try:
-        # first get all vm names
-        active_vms = telemetry.list_running_vms()
-        inactive_vms = telemetry.list_inactive_vms()
+        vcpu = int(data["vcpu"])
+        memory = int(data["memory"])
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid input data for vcpu or memory"}), 400
 
-        # now get info of each vm of vcpu and memory
-        vms = []
-        vms += active_vms
-        vms += inactive_vms
+    try:
+        # First get all VM names
+        active_vms_response = telemetry.list_running_vms()
+        inactive_vms_response = telemetry.list_inactive_vms()
 
-        # now get the info of each vm
+        # Check if the response contains the expected 'vms' key
+        active_vms = active_vms_response[0].json.get("vms")
+        inactive_vms = inactive_vms_response[0].json.get("vms")
+
+        if active_vms is None or inactive_vms is None:
+            return jsonify({"error": "Missing 'vms' key in response"}), 500
+
+        # Now get info for each VM (vcpu and memory)
+        vms = active_vms + inactive_vms
+
         vm_info = []
         for vm in vms:
-            vm_info += telemetry.get_vm_info(vm)
+            vm_info_response = telemetry.get_vm_info(vm)
+            # Handle missing or malformed response
+            if vm_info_response and 'json' in dir(vm_info_response[0]):
+                vm_info.append(vm_info_response[0].json)
+            else:
+                return jsonify({"error": f"Failed to retrieve info for VM {vm}"}), 500
 
-        # now sum up the vcpu and memory
+        # Now sum up the vcpu and memory
         total_vcpu = 0
         total_memory = 0
 
         for vm in vm_info:
-            total_vcpu += vm["VCPU-Allocated"]
-            total_memory += vm["RAM-Allocated"]
+            try:
+                # Handle missing or invalid data in the VM info
+                if "VCPU-Allocated" not in vm or "RAM-Allocated" not in vm:
+                    return jsonify({"error": "Missing VCPU-Allocated or RAM-Allocated in VM info"}), 500
 
-        # now add the vcpu and memory of the new vm
+                total_vcpu += int(vm["VCPU-Allocated"])
+                total_memory += int(vm["RAM-Allocated"])
+            except (ValueError, TypeError):
+                return jsonify({"error": "Invalid data for VM resource allocation"}), 500
+
+        # Add the vcpu and memory for the new VM
         total_vcpu += vcpu
         total_memory += memory
 
-        # first check if max limits are set
-        if not os.environ.get("PROVIDER_SERVER_MAX_VMS"):
-            return jsonify({"error": "Max limits not set"}), 500
-        if not os.environ.get("PROVIDER_SERVER_MAX_CPU"):
+        # Check if max limits are set
+        max_vms = os.environ.get("PROVIDER_SERVER_MAX_VMS")
+        max_cpu = os.environ.get("PROVIDER_SERVER_MAX_CPU")
+        max_ram = os.environ.get("PROVIDER_SERVER_MAX_RAM")
+
+        if not max_vms or not max_cpu or not max_ram:
             return jsonify({"error": "Max limits not set"}), 500
 
-        # check with the max limits
-        if total_vcpu > int(os.environ.get("PROVIDER_SERVER_MAX_CPU")):
-            return jsonify({"error": "CPU limit exceeded"}), 500
+        # Check against the max limits
+        if total_vcpu > int(max_cpu):
+            return jsonify({"error": "CPU limit exceeded"}), 401
 
-        if total_memory > int(os.environ.get("PROVIDER_SERVER_MAX_RAM")):
-            return jsonify({"error": "Memory limit exceeded"}), 500
+        if total_memory > int(max_ram):
+            return jsonify({"error": "Memory limit exceeded"}), 401
 
         return jsonify({"message": "VM can be created"}), 200
 
     except Exception as e:
-
+        print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
 

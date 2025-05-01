@@ -27,6 +27,8 @@ def get_vm_ips():
         # Step 1: Get MAC address of the VM
         result = subprocess.run(["virsh", "domiflist", vm_name], capture_output=True, text=True, check=True)
         lines = result.stdout.splitlines()
+
+        print(f"virsh domiflist output: {lines}")
         
         mac_address = None
         for line in lines:
@@ -99,6 +101,7 @@ def setup_wireguard():
     peer_endpoint = data.get("client_endpoint","192.168.0.162:51820")
     vm_ip = data.get("vm_ip",None)
     client_id = data.get("client_id",123)
+    client_id = 123
 
 
     if not vm_ip:
@@ -121,6 +124,14 @@ def setup_wireguard():
             return {"error": "Client public key not provided"}, 400
         if not peer_endpoint:
             return {"error": "Client endpoint not provided"}, 400
+
+    if type(peer_public_key) is not str:
+        print(peer_public_key)
+        return {"error": "Client public key must be a string"}, 400
+
+    if type(peer_endpoint) is not str:
+        print(peer_endpoint)
+        return {"error": "Client endpoint must be a string"}, 400
 
     if vm_ip not in ssh_sessions:
         return {"error": "No active SSH connection for this IP"}, 400
@@ -149,14 +160,14 @@ def setup_wireguard():
     try:
         with open(local_config_path, "w") as f:
             f.write(f"""[Interface]
-Address = 10.0.0.2/24
+Address = 10.0.0.2/32
 PrivateKey = {private_key}
 ListenPort = 51820
 
 [Peer]
 PublicKey = {peer_public_key}
 Endpoint = {peer_endpoint}
-AllowedIPs = 10.0.0.0/32
+AllowedIPs = 10.0.0.1/32
 PersistentKeepalive = 5
 """)
         time.sleep(0.5)
@@ -223,10 +234,15 @@ PersistentKeepalive = 5
             stdin.write(sudo_password + "\n")
             stdin.flush()
             error = stderr.read().decode().strip()
+            print(stdout.read().decode())
             if error:
                 return {"error": error}, 500
 
-        return {"status": "active", "message": "WireGuard setup completed successfully", "public_key": public_key, "wiregaurd_ip":"10.0.0.2"}, 200
+        return {"status": "active",
+                "message": "WireGuard setup completed successfully",
+                "public_key": public_key,
+                "wiregaurd_ip":"10.0.0.2/32",
+                }, 200
 
     except Exception as e:
         print(e)
