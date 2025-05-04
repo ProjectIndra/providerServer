@@ -97,11 +97,26 @@ def setup_wireguard():
     """
 
     data = request.get_json()
-    peer_public_key = data.get("client_public_key","Pb1j0VNQYKd7P3W9EfUI3GrzfKDLXv27PCZox3PB5w8=")
-    peer_endpoint = data.get("client_endpoint","192.168.0.162:51820")
     vm_ip = data.get("vm_ip",None)
-    client_id = data.get("client_id",123)
     client_id = 123
+    data = data.get("combined_interface_details",None)
+
+    client_public_key = data.get("client_peer_public_key")
+    client_allowed_ips = data.get("client_peer_address")
+    interface_endpoint = data.get("interface_endpoint")
+    interface_public_key = data.get("interface_public_key")
+    interface_allowed_ips = data.get("interface_allowed_ips")
+    vm_peer_address = data.get("vm_peer_address")
+    vm_peer_private_key = data.get("vm_peer_private_key")
+
+    # print everything here
+    print(f"Client Public Key: {client_public_key}")
+    print(f"Client Allowed IPs: {client_allowed_ips}")
+    print(f"Interface Endpoint: {interface_endpoint}")
+    print(f"Interface Public Key: {interface_public_key}")
+    print(f"Interface Allowed IPs: {interface_allowed_ips}")
+    print(f"VM Peer Address: {vm_peer_address}")
+    print(f"VM Peer Private Key: {vm_peer_private_key}")
 
 
     if not vm_ip:
@@ -117,21 +132,24 @@ def setup_wireguard():
     # before that we need to establish the ssh connection
     establish_ssh(vm_ip)
 
-    if not vm_ip or not peer_public_key or not peer_endpoint:
+    if not vm_ip or not client_public_key or not interface_endpoint or not interface_public_key or not interface_allowed_ips or not vm_peer_address or not vm_peer_private_key:
+        # printing which parameter is not provided
+        missing_params = []
         if not vm_ip:
-            return {"error": "VM IP not provided"}, 400
-        if not peer_public_key:
-            return {"error": "Client public key not provided"}, 400
-        if not peer_endpoint:
-            return {"error": "Client endpoint not provided"}, 400
-
-    if type(peer_public_key) is not str:
-        print(peer_public_key)
-        return {"error": "Client public key must be a string"}, 400
-
-    if type(peer_endpoint) is not str:
-        print(peer_endpoint)
-        return {"error": "Client endpoint must be a string"}, 400
+            missing_params.append("vm_ip")
+        if not client_public_key:
+            missing_params.append("client_public_key")
+        if not interface_endpoint:
+            missing_params.append("interface_endpoint")
+        if not interface_public_key:
+            missing_params.append("interface_public_key")
+        if not interface_allowed_ips:
+            missing_params.append("interface_allowed_ips")
+        if not vm_peer_address:
+            missing_params.append("vm_peer_address")
+        if not vm_peer_private_key:
+            missing_params.append("vm_peer_private_key")
+        return {"error": f"Missing parameters: {', '.join(missing_params)}"}, 400
 
     if vm_ip not in ssh_sessions:
         return {"error": "No active SSH connection for this IP"}, 400
@@ -142,32 +160,23 @@ def setup_wireguard():
         print("SSH connection failed")
         return {"error": "SSH connection failed"}, 500
 
-    # Generate WireGuard keys locally
-    private_key = os.popen("wg genkey").read().strip()
-    if not private_key:
-        print("Failed to generate WireGuard private key")
-        return {"error": "Failed to generate WireGuard private key"}, 500
-
-    public_key = os.popen(f"echo {private_key} | wg pubkey").read().strip()
-
-    print(f"Private key: {private_key}")
-    print(f"Public key: {public_key}")
-    print(f"Peer public key: {peer_public_key}")
-    print(f"Peer endpoint: {peer_endpoint}")
-    print(f"VM IP: {vm_ip}")
-
     # Write the WireGuard configuration locally
     try:
         with open(local_config_path, "w") as f:
             f.write(f"""[Interface]
-Address = 10.0.0.2/32
-PrivateKey = {private_key}
+Address = {vm_peer_address}
+PrivateKey = {vm_peer_private_key}
 ListenPort = 51820
 
 [Peer]
-PublicKey = {peer_public_key}
-Endpoint = {peer_endpoint}
-AllowedIPs = 10.0.0.1/32
+PublicKey = {interface_public_key}
+Endpoint = {interface_endpoint}
+AllowedIPs = {interface_allowed_ips},{client_allowed_ips}
+PersistentKeepalive = 5
+
+[Peer]
+PublicKey = {client_public_key}
+AllowedIPs = {client_allowed_ips}
 PersistentKeepalive = 5
 """)
         time.sleep(0.5)
@@ -240,8 +249,8 @@ PersistentKeepalive = 5
 
         return {"status": "active",
                 "message": "WireGuard setup completed successfully",
-                "public_key": public_key,
-                "wiregaurd_ip":"10.0.0.2/32",
+                "public_key": client_public_key,
+                "wiregaurd_ip":client_allowed_ips,
                 }, 200
 
     except Exception as e:
