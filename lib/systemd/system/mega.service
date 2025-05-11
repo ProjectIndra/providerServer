@@ -1,0 +1,14 @@
+[Unit]
+Description=Mega Provider Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/mega
+ExecStart=/opt/mega/venv/bin/python /opt/mega/server.py --port=6996
+Restart=always
+EnvironmentFile=/opt/mega/.env
+
+[Install]
+WantedBy=multi-user.target

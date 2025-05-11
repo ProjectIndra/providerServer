@@ -1,0 +1,25 @@
+fpm -s dir -t deb \
+  -n mega \
+  -v 1.0.0 \
+  --prefix=/ \
+  --after-install providerServer/postinst.sh \
+  --deb-systemd providerServer/lib/systemd/system/mega.service \
+  -d "libvirt-dev" \
+  -d "python3-libvirt" \
+  -d "qemu-kvm" \
+  -d "libvirt-daemon-system" \
+  -d "pipx" \
+  --exclude 'providerServer/images/**' \
+  --exclude 'providerServer/images' \
+  --exclude 'providerServer/tmp/**' \
+  --exclude 'providerServer/tmp' \
+  --exclude 'providerServer/Readme.md' \
+  --exclude 'providerServer/requirements.txt' \
+  --exclude 'providerServer/.env' \
+  --exclude 'providerServer/.env.example' \
+  --exclude 'providerServer/.git/**' \
+  --exclude 'providerServer/.gitignore' \
+  --exclude 'providerServer/scripts/**' \
+  --exclude 'providerServer/scripts' \
+  --exclude 'providerServer/__pycache__/**' \
+  providerServer/=/opt/mega
