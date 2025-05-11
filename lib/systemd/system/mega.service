@@ -7,11 +7,16 @@ Type=simple
 User=root
 WorkingDirectory=/opt/mega
 
-# Start ngrok in the background properly using 'nohup' or '&' with redirection
-ExecStartPre=/bin/bash -c "nohup ngrok http --log=stdout --authtoken=$(grep -oP '^NGROK_AUTH_TOKEN=\K.*' /etc/mega/config.conf) 6996 > /opt/mega/ngrok.log 2>&1 &"
+ExecStartPre=/bin/bash -c '\
+  AUTH_TOKEN=$(grep -oP "^NGROK_AUTH_TOKEN=\\K.*" /etc/mega/config.conf); \
+  NGROK_URL=$(grep -oP "^NGROK_URL=\\K.*" /etc/mega/config.conf); \
+  echo "[+] Starting ngrok with token: $AUTH_TOKEN and expected URL: $NGROK_URL"; \
+  nohup ngrok http --log=stdout --authtoken="$AUTH_TOKEN" --url="$NGROK_URL" 6996 > /opt/mega/ngrok.log 2>&1 & \
+'
 
 ExecStart=/opt/mega/venv/bin/python /opt/mega/server.py --port=6996
 Restart=always
+EnvironmentFile=/etc/mega/config.conf
 EnvironmentFile=/etc/mega/.env
 
 [Install]
