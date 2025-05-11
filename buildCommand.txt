@@ -9,6 +9,7 @@ fpm -s dir -t deb \
   -d "qemu-kvm" \
   -d "libvirt-daemon-system" \
   -d "pipx" \
+  -d "ngrok
   --exclude 'providerServer/images/**' \
   --exclude 'providerServer/images' \
   --exclude 'providerServer/tmp/**' \
