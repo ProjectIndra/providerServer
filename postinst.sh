@@ -55,6 +55,8 @@ NGROK_AUTH_TOKEN=$NGROK_AUTH_TOKEN
 NGROK_URL=$NGROK_URL
 PRV_VIRT_SYSTEM=$PRV_VIRT_SYSTEM
 MNGMT_URL="https://backend.computekart.com"
+IMAGES_DIR="/opt/mega/images"
+BASE_QVM_PATH="base.qcow2"
 EOF
 
     echo "[+] Configuration written to $CONFIG_FILE"

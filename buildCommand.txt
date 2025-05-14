@@ -5,11 +5,13 @@ fpm -s dir -t deb \
   --after-install providerServer/postinst.sh \
   --deb-systemd providerServer/lib/systemd/system/mega.service \
   -d "libvirt-dev" \
+  -d "virtinst" \
+  -d "virt-manager" \
   -d "python3-libvirt" \
   -d "qemu-kvm" \
   -d "libvirt-daemon-system" \
   -d "pipx" \
-  -d "ngrok
+  -d "ngrok" \
   --exclude 'providerServer/images/**' \
   --exclude 'providerServer/images' \
   --exclude 'providerServer/tmp/**' \

@@ -6,6 +6,8 @@ import paramiko
 
 import os
 import libvirt
+from dotenv import load_dotenv
+load_dotenv()
 
 
 #internal import
@@ -56,8 +58,8 @@ def create_vm_qvm():
     name = data.get("name")
     vcpus = data.get("vcpus")
     memory = data.get("memory")
-    qvm_path = "avinash.qcow2" # Base image path
-    images_dir = "./images"  # Directory where delta images are stored
+    qvm_path = os.environ.get('BASE_QVM_PATH')
+    images_dir = os.environ.get('IMAGES_DIR')
 
     if not name or not vcpus or not memory:
         return jsonify({"error": "Missing required parameters"}), 400
