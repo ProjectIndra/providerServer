@@ -27,16 +27,16 @@ def get_auth_token(init_token):
             cpu_capacity, ram_capacity, disk_capacity = system_info.get_system_info()
 
             body = {
-                "provider_verification_token": init_token,
-                "max_vms": maxvms,
-                "max_networks": maxnetworks,
-                "max_ram": maxram,
-                "max_cpu": maxcpu,
-                "max_disk": maxdisk,
-                "provider_url": os.environ.get("PROVIDER_SERVER_URL", "https://pet-muskox-honestly.ngrok-free.app"),
-                "cpu_capacity": cpu_capacity,
-                "ram_capacity": ram_capacity,
-                "disk_capacity": disk_capacity
+                "providerVerificationToken": init_token,
+                "providerAllowedVms": maxvms,
+                "providerAllowedNetworks": maxnetworks,
+                "providerAllowedRam": maxram,
+                "providerAllowedVcpu": maxcpu,
+                "providerAllowedStorage": maxdisk,
+                "providerUrl": "",
+                "providerVcpuCapacity": cpu_capacity,
+                "providerRamCapacity": ram_capacity,
+                "providerStorageCapacity": disk_capacity
             }
 
             print(f"Sending {body} to {url}")
@@ -45,13 +45,13 @@ def get_auth_token(init_token):
 
             if response.status_code == 200:
                 print("Token verified")
-                return response.json()["management_server_verification_token"]
+                return response.json()["management_server_verification_token"], response.json()["tunnel_server_verification_token"]
             else:
                 print(f"An error occurred: {response.json()}")
                 return None
 
         else:
-            print("MNGT_SERVER not set in environment")
+            print("MNGMT_URL not set in environment")
             return None
 
     except Exception as e:
