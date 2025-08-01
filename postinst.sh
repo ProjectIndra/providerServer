@@ -27,20 +27,12 @@ else
 fi
 
 # If the config file does not exist or is missing variables, ask for all values
-if [ ! -f "$CONFIG_FILE" ] || [ -z "$PROVIDER_SERVER_TOKEN_INIT" ] || [ -z "$NGROK_AUTH_TOKEN" ] || [ -z "$NGROK_URL" ] || [ -z "$PRV_VIRT_SYSTEM" ]; then
+if [ ! -f "$CONFIG_FILE" ] || [ -z "$PROVIDER_SERVER_TOKEN_INIT" ] || [ -z "$PRV_VIRT_SYSTEM" ]; then
     echo "[*] Please enter the required configuration values:"
 
     # Prompt for all variables if not set
     if [ -z "$PROVIDER_SERVER_TOKEN_INIT" ]; then
         read -p "🔐 PROVIDER_SERVER_TOKEN_INIT: " PROVIDER_SERVER_TOKEN_INIT
-    fi
-
-    if [ -z "$NGROK_AUTH_TOKEN" ]; then
-        read -p "🔑 NGROK_AUTH_TOKEN (optional): " NGROK_AUTH_TOKEN
-    fi
-
-    if [ -z "$NGROK_URL" ]; then
-        read -p "🌐 NGROK_URL (optional): " NGROK_URL
     fi
 
     if [ -z "$PRV_VIRT_SYSTEM" ]; then
@@ -51,10 +43,8 @@ if [ ! -f "$CONFIG_FILE" ] || [ -z "$PROVIDER_SERVER_TOKEN_INIT" ] || [ -z "$NGR
     # Write all variables back to config file
     cat <<EOF > "$CONFIG_FILE"
 PROVIDER_SERVER_TOKEN_INIT=$PROVIDER_SERVER_TOKEN_INIT
-NGROK_AUTH_TOKEN=$NGROK_AUTH_TOKEN
-NGROK_URL=$NGROK_URL
 PRV_VIRT_SYSTEM=$PRV_VIRT_SYSTEM
-MNGMT_URL="https://backend.computekart.com"
+MNGMT_URL="https://ea98405d8201.ngrok-free.app"
 IMAGES_DIR="/opt/mega/images"
 BASE_QVM_PATH="base.qcow2"
 EOF
@@ -62,17 +52,13 @@ EOF
     echo "[+] Configuration written to $CONFIG_FILE"
 fi
 
-# Install ngrok (if token is provided)
-if [ -n "$NGROK_AUTH_TOKEN" ]; then
-    echo "[+] Installing and configuring ngrok..."
-    curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
-        | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
-    echo "deb https://ngrok-agent.s3.amazonaws.com buster main" \
-        | sudo tee /etc/apt/sources.list.d/ngrok.list
-    sudo apt update
-else
-    echo "[!] Skipping ngrok installation: No auth token provided."
-fi
+# install the tunnel client
+sudo chmod +x /opt/mega/downloadTunnelClient.sh
+/opt/mega/downloadTunnelClient.sh
+
+# call downloadImage.sh to download the base image of the VM i.e. base.qcow2
+# sudo chmod +x /opt/mega/downloadImage.sh
+# /opt/mega/downloadImage.sh
 
 # Set up virtual environment
 python3 -m venv /opt/mega/venv

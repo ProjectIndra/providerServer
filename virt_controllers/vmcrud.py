@@ -102,6 +102,7 @@ def create_vm_qvm():
 
     try:
         result = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
         return jsonify({"message": "VM created successfully using delta disk"}), 200
     except subprocess.CalledProcessError as e:
         print(f"Error creating VM: {e.stderr}")

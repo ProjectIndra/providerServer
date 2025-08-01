@@ -7,17 +7,13 @@ Type=simple
 User=root
 WorkingDirectory=/opt/mega
 
-ExecStartPre=/bin/bash -c '\
-  AUTH_TOKEN=$(grep -oP "^NGROK_AUTH_TOKEN=\\K.*" /etc/mega/config.conf); \
-  NGROK_URL=$(grep -oP "^NGROK_URL=\\K.*" /etc/mega/config.conf); \
-  echo "[+] Starting ngrok with token: $AUTH_TOKEN and expected URL: $NGROK_URL"; \
-  nohup ngrok http --log=stdout --authtoken="$AUTH_TOKEN" --url="$NGROK_URL" 6996 > /opt/mega/ngrok.log 2>&1 & \
-'
 
 ExecStart=/opt/mega/venv/bin/python /opt/mega/server.py --port=6996
+
+ExecStartPost=/bin/bash -c "nohup /usr/lib/jvm/java-11/bin/java -cp /opt/mega/ComputeKart-tunnel-client-1.0.0.jar main.Main $(grep TUNNEL_SERVER_TOKEN /opt/mega/.env | cut -d '=' -f2 | tr -d '\"') localhost 6996 >> /opt/mega/tunnel.log 2>&1 &"
+
 Restart=always
 EnvironmentFile=/etc/mega/config.conf
-EnvironmentFile=/etc/mega/.env
 
 [Install]
 WantedBy=multi-user.target

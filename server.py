@@ -102,14 +102,15 @@ if __name__ == '__main__':
             print("INIT Token found in environment")
             print("Requesting token from management server")
 
-            token = auth.get_auth_token(os.environ.get("PROVIDER_SERVER_TOKEN_INIT"))
+            provider_server_token, tunnel_token = auth.get_auth_token(os.environ.get("PROVIDER_SERVER_TOKEN_INIT"))
 
-            if token is None:
+            if provider_server_token is None or tunnel_token is None:
                 print("Failed to get token from management server")
                 exit(1)
             else:
-                print("Token received from management server")
-                env.set_persistent_env_var("PROVIDER_SERVER_TOKEN", token)
+                print("Tokens received from management server")
+                env.set_persistent_env_var("PROVIDER_SERVER_TOKEN", provider_server_token)
+                env.set_persistent_env_var("TUNNEL_SERVER_TOKEN", tunnel_token)
                 print("Token saved in environment")
 
     if os.environ.get("PROVIDER_SERVER_MAX_VMS") is None:

@@ -34,3 +34,18 @@ poetry install
 then run the following command to activate the virtual environment:
 
 ```bash
+
+# build deb file from the builcommand.txt and put in the repo -> curl/sudo apt install mega -> 
+# after installing the package the code will be put in the folder '/opt/mega' which will be created own it's own (mega folder) ->
+# postinst.sh file will be executed where config file is created inside /etc/mega and all the required key/details are put ->
+# demo.sh is executed which is used to install the base.qcow image ->
+# Then venv is setup, systemd is reloaded and service is enabled ->
+# Then mega.service is run where provider server is started and then tunnel/ngrok is created
+
+# sudo mv /home/kumarsubrato1103/mega_1.0.0_amd64.deb .
+
+# sudo apt remove --purge mega
+
+# sudo dpkg -i mega
+
+#journalctl -u mega.service -b
