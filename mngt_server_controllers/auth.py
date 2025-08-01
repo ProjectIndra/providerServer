@@ -9,8 +9,8 @@ load_dotenv()
 
 def get_auth_token(init_token):
     """
-    This is a function to get the authentication token
-    using the INIT TOKEN
+    This is a function to get the authentication token for tunnel and provider server
+    using the INIT TOKEN. The tunnel is also created through this function.
     """
 
     try:
@@ -28,15 +28,15 @@ def get_auth_token(init_token):
 
             body = {
                 "providerVerificationToken": init_token,
-                "providerAllowedVms": maxvms,
-                "providerAllowedNetworks": maxnetworks,
-                "providerAllowedRam": maxram,
-                "providerAllowedVcpu": maxcpu,
-                "providerAllowedStorage": maxdisk,
+                "providerAllowedVms": int(maxvms),
+                "providerAllowedNetworks": int(maxnetworks),
+                "providerAllowedRam": int(maxram),
+                "providerAllowedVcpu": int(maxcpu),
+                "providerAllowedStorage": int(maxdisk),
                 "providerUrl": "",
-                "providerVcpuCapacity": cpu_capacity,
-                "providerRamCapacity": ram_capacity,
-                "providerStorageCapacity": disk_capacity
+                "providerVcpuCapacity": int(cpu_capacity),
+                "providerRamCapacity": int(ram_capacity),
+                "providerStorageCapacity": int(disk_capacity)
             }
 
             print(f"Sending {body} to {url}")
