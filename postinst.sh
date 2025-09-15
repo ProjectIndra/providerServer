@@ -44,8 +44,8 @@ if [ ! -f "$CONFIG_FILE" ] || [ -z "$PROVIDER_SERVER_TOKEN_INIT" ] || [ -z "$PRV
     cat <<EOF > "$CONFIG_FILE"
 PROVIDER_SERVER_TOKEN_INIT=$PROVIDER_SERVER_TOKEN_INIT
 PRV_VIRT_SYSTEM=$PRV_VIRT_SYSTEM
-MNGMT_URL="https://ea98405d8201.ngrok-free.app"
-IMAGES_DIR="/opt/mega/images"
+MNGMT_URL="http://100.81.95.72:30001"
+IMAGES_DIR="/home/avinash/cloud_project/images"
 BASE_QVM_PATH="base.qcow2"
 EOF
 
