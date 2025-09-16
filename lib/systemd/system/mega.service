@@ -10,7 +10,7 @@ WorkingDirectory=/opt/mega
 
 ExecStart=/opt/mega/venv/bin/python /opt/mega/server.py --port=6996
 
-ExecStartPost=/bin/bash -c "nohup /usr/lib/jvm/java-11/bin/java -cp /opt/mega/ComputeKart-tunnel-client-1.0.0.jar main.Main $(grep TUNNEL_SERVER_TOKEN /opt/mega/.env | cut -d '=' -f2 | tr -d '\"') localhost 6996 >> /opt/mega/tunnel.log 2>&1 &"
+ExecStartPost=/bin/bash -c "nohup $JAVA_HOME/bin/java -cp /opt/mega/ComputeKart-tunnel-client-1.0.0.jar main.Main $(grep TUNNEL_SERVER_TOKEN /opt/mega/.env | cut -d '=' -f2 | tr -d '\"') localhost 6996 >> /opt/mega/tunnel.log 2>&1 &"
 
 Restart=always
 EnvironmentFile=/etc/mega/config.conf
