@@ -4,9 +4,9 @@ fpm -s dir -t deb \
   --prefix=/ \
   --after-install providerServer/postinst.sh \
   --deb-systemd providerServer/lib/systemd/system/mega.service \
+  --deb-systemd providerServer/lib/systemd/system/mega-scrapper.service \
   -d "libvirt-dev" \
   -d "virtinst" \
-  -d "virt-manager" \
   -d "python3-libvirt" \
   -d "qemu-kvm" \
   -d "libvirt-daemon-system" \

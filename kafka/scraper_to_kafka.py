@@ -4,19 +4,24 @@ from confluent_kafka import Producer
 import json
 import re
 from collections import defaultdict
+import os
+from dotenv import load_dotenv
 
 conf = {
-    'bootstrap.servers': '192.168.1.9:9092,192.168.1.9:9094,192.168.1.9:9096',
+    'bootstrap.servers': '100.81.95.72:9092,100.81.95.72:9094,100.81.95.72:9096',
     'client.id': 'metrics-scraper'
 }
 
 producer = Producer(conf)
 
 TOPIC = "provider-metrics"
-METRICS_URL = "http://localhost:3000/metrics"  # replace with your app metrics endpoint
+METRICS_URL = "http://localhost:6996/metrics"
 
-PROVIDER_ID = "provider1"
-PROVIDER_URL = "http://localhost:3000"
+# Load environment variables from .env file
+load_dotenv(os.path.join(os.path.dirname(__file__), "../.env"))
+
+# Get the provider server token from the environment
+PROVIDER_ID = os.getenv("PROVIDER_SERVER_TOKEN")
 
 
 def delivery_report(err, msg):
@@ -52,11 +57,10 @@ def parse_prometheus_metrics(text: str):
     return metrics
 
 
-def aggregate_metrics(parsed_metrics):
+def aggregate_metrics(parsed_metrics,PROVIDER_ID):
     """Aggregate flat list into hierarchical JSON"""
     provider = {
         "provider_id": PROVIDER_ID,
-        "provider_url": PROVIDER_URL,
         "metrics": {},
         "vms": [],
         "networks": []
@@ -105,27 +109,43 @@ def aggregate_metrics(parsed_metrics):
     return provider
 
 
+# Main loop
 while True:
     try:
-        response = requests.get(METRICS_URL)
-        response.raise_for_status()
-        metrics_text = response.text
-
-        parsed = parse_prometheus_metrics(metrics_text)
-
-        if parsed:
-            structured = aggregate_metrics(parsed)
-            producer.produce(
-                TOPIC,
-                value=json.dumps(structured).encode("utf-8"),
-                callback=delivery_report
-            )
-            producer.flush()
-            print(f"Pushed structured metrics to Kafka")
+        # Reload .env each iteration
+        load_dotenv(os.path.join(os.path.dirname(__file__), "../.env"), override=True)
+        new_provider_id = os.getenv("PROVIDER_SERVER_TOKEN")
+        if new_provider_id:
+            if new_provider_id != PROVIDER_ID:
+                PROVIDER_ID = new_provider_id
+                print(f"PROVIDER_ID updated: {PROVIDER_ID}")
         else:
-            print("No metrics parsed")
+            print("PROVIDER_SERVER_TOKEN not found yet, will check again.")
+
+        # Only proceed if token is available
+        if PROVIDER_ID:
+            response = requests.get(METRICS_URL)
+            response.raise_for_status()
+            metrics_text = response.text
+
+            parsed = parse_prometheus_metrics(metrics_text)
+
+            if parsed:
+                structured = aggregate_metrics(parsed, PROVIDER_ID)
+                producer.produce(
+                    TOPIC,
+                    value=json.dumps(structured).encode("utf-8"),
+                    callback=delivery_report
+                )
+                producer.flush()
+                print(f"Pushed structured metrics to Kafka")
+            else:
+                print("No metrics parsed")
+        else:
+            print("Skipping metrics push, token not yet available.")
 
     except Exception as e:
         print(f"Error: {e}")
 
-    time.sleep(120)
+    time.sleep(120)  # check every 2 minutes
+

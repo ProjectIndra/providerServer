@@ -1,0 +1,22 @@
+[Unit]
+Description=Mega Kafka Scraper
+After=mega.service
+Requires=mega.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/mega
+
+ExecStart=/opt/mega/venv/bin/python -u /opt/mega/kafka/scraper_to_kafka.py
+Restart=always
+RestartSec=5
+
+StandardOutput=append:/opt/mega/kafka.log
+StandardError=append:/opt/mega/kafka.log
+EnvironmentFile=/etc/mega/config.conf
+
+Environment="PATH=/opt/mega/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+[Install]
+WantedBy=multi-user.target

@@ -73,4 +73,8 @@ systemctl daemon-reload
 systemctl enable mega
 systemctl restart mega
 
+echo "[+] Enabling and starting the mega-scrapper service..."
+systemctl enable mega-scrapper
+systemctl restart mega-scrapper
+
 echo "✅ Mega server setup complete and running!"
