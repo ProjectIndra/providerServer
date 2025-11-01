@@ -69,8 +69,8 @@ def establish_ssh(ip):
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh_client.connect(
             hostname=ip,
-            username="avinash",
-            password="avinash",
+            username="mega",
+            password="mega",
             timeout=10
         )
         ssh_sessions[ip] = ssh_client
@@ -97,7 +97,7 @@ def setup_wireguard():
     """
 
     data = request.get_json()
-    vm_ip = data.get("vm_ip",None)
+    vm_ip = data.get("vm_ip",None) # this is the ip of the vm in local provider network , which we need to ssh into
     client_id = 123
     data = data.get("combined_interface_details",None)
 
@@ -121,10 +121,10 @@ def setup_wireguard():
 
     if not vm_ip:
         return {"error": "Missing required parameters"}, 400
-    sudo_password = "avinash"  # Replace with actual sudo password
+    sudo_password = "mega"  # Replace with actual sudo password
     INTERFACE = f"wg_{client_id}"
     local_config_path = f"./tmp/{INTERFACE}.conf"
-    remote_temp_path = f"/home/avinash/{INTERFACE}.conf"
+    remote_temp_path = f"/home/mega/{INTERFACE}.conf"
     remote_config_path = f"/etc/wireguard/{INTERFACE}.conf"
 
     os.makedirs(os.path.dirname(local_config_path), exist_ok=True)
@@ -196,6 +196,7 @@ PersistentKeepalive = 5
         commands = [
             "set -e",  # Stop on error
             # check if the wireguard interface is present
+            f"echo '{sudo_password}' | sudo -S apt update && sudo apt install -y wireguard",  # Install WireGuard
             f"echo '{sudo_password}' | sudo -S wg-quick show {INTERFACE}",
             f"echo '{sudo_password}' | sudo -S wg-quick down {INTERFACE}",
             # delete everything from the wireguard config directory
@@ -231,7 +232,6 @@ PersistentKeepalive = 5
             "set -e",  # Stop on error
             # if wiregaurd is already installed then up then we need down it first
             f"echo '{sudo_password}' | sudo -S wg-quick down {INTERFACE}",  # Stop WireGuard
-            f"echo '{sudo_password}' | sudo -S apt update && sudo apt install -y wireguard",  # Install WireGuard
             f"echo '{sudo_password}' | sudo -S mv {remote_temp_path} {remote_config_path}",  # Move config
             f"""echo 'net.ipv4.ip_forward=1' | sudo tee -a /etc/sysctl.conf""",  # Enable IP forwarding
             f"echo '{sudo_password}' | sudo -S chmod 600 {remote_config_path}",  # Set permissions
