@@ -173,11 +173,6 @@ PublicKey = {interface_public_key}
 Endpoint = {interface_endpoint}
 AllowedIPs = {interface_allowed_ips},{client_allowed_ips}
 PersistentKeepalive = 5
-
-[Peer]
-PublicKey = {client_public_key}
-AllowedIPs = {client_allowed_ips}
-PersistentKeepalive = 5
 """)
         time.sleep(0.5)
     except Exception as e:
