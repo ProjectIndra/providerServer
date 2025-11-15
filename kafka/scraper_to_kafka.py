@@ -8,7 +8,7 @@ import os
 from dotenv import load_dotenv
 
 conf = {
-    'bootstrap.servers': '100.81.95.72:9092,100.81.95.72:9094,100.81.95.72:9096',
+    'bootstrap.servers': '106.51.57.66:9092,106.51.57.66:9094,106.51.57.66:9096',
     'client.id': 'metrics-scraper'
 }
 

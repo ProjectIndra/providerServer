@@ -1,6 +1,12 @@
 import os
 
 def load_env(env_file=".env"):
+
+    if not os.path.exists(env_file):
+        # create the file if it does not exist
+        with open(env_file, "w") as f:
+            f.write("")  # create an empty .env file
+            
     if os.path.exists(env_file):
         with open(env_file, "r") as f:
             for line in f:
