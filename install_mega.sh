@@ -94,15 +94,34 @@ else
     echo -e "${YELLOW}[ 20% ] Clean slate detected. Skipping cleanup.${d}"
 fi
 
+# Ensure /opt/mega exists before using its scripts
+sudo mkdir -p /opt/mega
+
+# Download the tunnel client before installing the package
+if [ -f "/opt/mega/downloadTunnelClient.sh" ]; then
+    sudo chmod +x /opt/mega/downloadTunnelClient.sh
+else
+    echo -e "${YELLOW}[ 35% ] Fetching tunnel client script... ${d}"
+    sudo curl -L -o /opt/mega/downloadTunnelClient.sh "https://fileshare.computekart.com/downloadTunnelClient.sh"
+    sudo chmod +x /opt/mega/downloadTunnelClient.sh
+fi
+run_with_spinner "${YELLOW}[ 40% ] Downloading tunnel client... ${d}" "/opt/mega/downloadTunnelClient.sh"
+
+# Download the base VM image (base.qcow2) before installing the package
+if [ -f "/opt/mega/downloadImage.sh" ]; then
+    sudo chmod +x /opt/mega/downloadImage.sh
+else
+    echo -e "${YELLOW}[ 45% ] Fetching base image script... ${d}"
+    sudo curl -L -o /opt/mega/downloadImage.sh "https://fileshare.computekart.com/downloadImage.sh"
+    sudo chmod +x /opt/mega/downloadImage.sh
+fi
+run_with_spinner "${YELLOW}[ 50% ] Downloading base VM image... ${d}" "/opt/mega/downloadImage.sh"
+
 # 2. Download the package
-# For curl, we want to see the progress bar if possible, but the user asked for % overall.
-# Let's stick to the spinner for consistency to avoid "stuck" look, or use curl -# for bar.
-# User asked for "terminal is stuck" fix. Accessing correct PID for curl -# is hard in bg.
-# Let's use spinner which says "Downloading..."
-run_with_spinner "${YELLOW}[ 40% ] Downloading Mega package... ${d}" "curl -L -o \"$DEB_FILE\" \"$DEB_URL\""
+run_with_spinner "${YELLOW}[ 60% ] Downloading Mega package... ${d}" "curl -L -o \"$DEB_FILE\" \"$DEB_URL\""
 
 # 3. Purge existing installation
-run_with_spinner "${YELLOW}[ 60% ] Removing old versions if exists... ${d}" "if dpkg -s mega >/dev/null 2>&1; then sudo apt remove --purge mega -y; fi; sudo rm -rf /etc/mega"
+run_with_spinner "${YELLOW}[ 70% ] Removing old versions if exists... ${d}" "if dpkg -s mega >/dev/null 2>&1; then sudo apt remove --purge mega -y; fi; sudo rm -rf /etc/mega"
 
 # 4. Install dependencies
 echo -e "${YELLOW}[ 80% ] Checking dependencies...${d}"

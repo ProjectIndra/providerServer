@@ -62,14 +62,6 @@ EOF
 
 echo "[+] Configuration written to $CONFIG_FILE"
 
-# install the tunnel client
-sudo chmod +x /opt/mega/downloadTunnelClient.sh
-/opt/mega/downloadTunnelClient.sh
-
-call downloadImage.sh to download the base image of the VM i.e. base.qcow2
-sudo chmod +x /opt/mega/downloadImage.sh
-/opt/mega/downloadImage.sh
-
 # Set up virtual environment
 python3 -m venv /opt/mega/venv
 . /opt/mega/venv/bin/activate
