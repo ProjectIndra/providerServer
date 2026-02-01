@@ -42,10 +42,19 @@ then run the following command to activate the virtual environment:
 # Then venv is setup, systemd is reloaded and service is enabled ->
 # Then mega.service is run where provider server is started and then tunnel/ngrok is created
 
-# sudo mv /home/kumarsubrato1103/mega_1.0.0_amd64.deb .
+# process:
+
+# build the deb file from the buildCommand.txt and push the .deb file (mega_1.0.0_amd64.deb) to the fileshare.computekart.com using scp 
+
+# curl command to install the mega package from fileshare.computekart.com - curl -L -o mega https://fileshare.computekart.com/mega_1.0.0_amd64.deb
 
 # sudo apt remove --purge mega
 
 # sudo dpkg -i mega
+# sudo apt --fix-broken install -y  # This fixes missing dependencies automatically
 
+
+# to check logs -
 #journalctl -u mega.service -b
+
+# curl -sL https://fileshare.computekart.com/install_mega.sh | sudo INSTALL_TOKEN=your_token bash

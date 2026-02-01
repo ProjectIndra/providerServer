@@ -26,39 +26,49 @@ else
     echo "[+] No existing config found. Proceeding to collect configuration..."
 fi
 
+# Check for install token file (passed from install_mega.sh)
+# This takes precedence over existing config to allow re-keying
+TOKEN_FILE="/etc/mega/.install_token"
+if [ -f "$TOKEN_FILE" ]; then
+    echo "[+] Found install token file. Using new token."
+    PROVIDER_SERVER_TOKEN_INIT=$(cat "$TOKEN_FILE")
+    rm -f "$TOKEN_FILE"
+fi
+
 # If the config file does not exist or is missing variables, ask for all values
-if [ ! -f "$CONFIG_FILE" ] || [ -z "$PROVIDER_SERVER_TOKEN_INIT" ] || [ -z "$PRV_VIRT_SYSTEM" ]; then
-    echo "[*] Please enter the required configuration values:"
+# Use provided env var or empty (logic handled by caller)
+# PROVIDER_SERVER_TOKEN_INIT passed from install_mega.sh satisfies this.
 
-    # Prompt for all variables if not set
-    if [ -z "$PROVIDER_SERVER_TOKEN_INIT" ]; then
-        read -p "🔐 PROVIDER_SERVER_TOKEN_INIT: " PROVIDER_SERVER_TOKEN_INIT
-    fi
+# helper for PRV_VIRT_SYSTEM
+if [ -z "$PRV_VIRT_SYSTEM" ]; then
+     PRV_VIRT_SYSTEM="qemu:///system"
+fi
 
-    if [ -z "$PRV_VIRT_SYSTEM" ]; then
-        read -p "🖥️ Libvirt system URI [default: qemu:///system]: " PRV_VIRT_SYSTEM
-        PRV_VIRT_SYSTEM=${PRV_VIRT_SYSTEM:-qemu:///system}
-    fi
+IMAGES_DIR="/opt/mega/images"
 
-    # Write all variables back to config file
-    cat <<EOF > "$CONFIG_FILE"
-PROVIDER_SERVER_TOKEN_INIT=$PROVIDER_SERVER_TOKEN_INIT
-PRV_VIRT_SYSTEM=$PRV_VIRT_SYSTEM
+# Ensure the directory exists
+mkdir -p "$IMAGES_DIR"
+
+# Write all variables back to config file
+# We quote the values to ensure safe sourcing later
+cat <<EOF > "$CONFIG_FILE"
+PROVIDER_SERVER_TOKEN_INIT="${PROVIDER_SERVER_TOKEN_INIT}"
+PRV_VIRT_SYSTEM="${PRV_VIRT_SYSTEM}"
 MNGMT_URL="https://backend.computekart.com"
-IMAGES_DIR="/home/avinash/cloud_project/images"
+IMAGES_DIR="${IMAGES_DIR}"
 BASE_QVM_PATH="base.qcow2"
+JAVA_HOME="/opt/mega/java-1.11.0-openjdk-amd64"
 EOF
 
-    echo "[+] Configuration written to $CONFIG_FILE"
-fi
+echo "[+] Configuration written to $CONFIG_FILE"
 
 # install the tunnel client
 sudo chmod +x /opt/mega/downloadTunnelClient.sh
 /opt/mega/downloadTunnelClient.sh
 
-# call downloadImage.sh to download the base image of the VM i.e. base.qcow2
-# sudo chmod +x /opt/mega/downloadImage.sh
-# /opt/mega/downloadImage.sh
+call downloadImage.sh to download the base image of the VM i.e. base.qcow2
+sudo chmod +x /opt/mega/downloadImage.sh
+/opt/mega/downloadImage.sh
 
 # Set up virtual environment
 python3 -m venv /opt/mega/venv
@@ -73,8 +83,12 @@ systemctl daemon-reload
 systemctl enable mega
 systemctl restart mega
 
-echo "[+] Enabling and starting the mega-scrapper service..."
-systemctl enable mega-scrapper
-systemctl restart mega-scrapper
+if systemctl list-unit-files | grep -q mega-scrapper.service; then
+    echo "[+] Enabling and starting the mega-scrapper service..."
+    systemctl enable mega-scrapper
+    systemctl restart mega-scrapper
+else
+    echo "[!] mega-scrapper service not found, skipping."
+fi
 
 echo "✅ Mega server setup complete and running!"

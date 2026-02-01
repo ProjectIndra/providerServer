@@ -23,7 +23,7 @@ fi
 
 TOKEN="$PROVIDER_SERVER_TOKEN_INIT"
 # Added build-essential and python3-dev for compiling libvirt-python wheels
-DEPENDENCIES=("libvirt-dev" "virtinst" "python3-libvirt" "qemu-kvm" "libvirt-daemon-system" "pipx" "build-essential" "python3-dev" "pkg-config")
+DEPENDENCIES=("libvirt-dev" "virtinst" "python3-libvirt" "qemu-kvm" "libvirt-daemon-system" "pipx" "build-essential" "python3-pip" "pkg-config")
 
 
 # Colors
