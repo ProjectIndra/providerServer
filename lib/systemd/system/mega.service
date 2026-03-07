@@ -8,18 +8,7 @@ User=root
 WorkingDirectory=/opt/mega
 
 ExecStart=/opt/mega/venv/bin/python /opt/mega/server.py --port=6996
-
-ExecStartPost=/bin/bash -c '\
-while true; do \
-TOKEN=$(grep TUNNEL_SERVER_TOKEN /opt/mega/.env 2>/dev/null | cut -d "=" -f2 | tr -d "\""); \
-if [ ! -z "$TOKEN" ]; then \
-echo "Token found. Starting tunnel..."; \
-nohup /opt/mega/java-1.11.0-openjdk-amd64/bin/java -cp /opt/mega/ComputeKart-tunnel-client-1.0.0.jar main.Main $TOKEN localhost 6996 >> /opt/mega/tunnel.log 2>&1 & \
-break; \
-fi; \
-echo "Waiting for token..."; \
-sleep 3; \
-done'
+ExecStartPost=/opt/mega/start-tunnel.sh
 
 Restart=always
 EnvironmentFile=/etc/mega/config.conf

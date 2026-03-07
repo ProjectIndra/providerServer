@@ -68,6 +68,9 @@ python3 -m venv /opt/mega/venv
 pip install --upgrade pip
 pip install -r requirements.txt
 
+# set permissions for tunnel client
+chmod +x /opt/mega/start-tunnel.sh
+
 # Reload systemd and enable service
 echo "[+] Enabling and starting the mega service..."
 systemctl daemon-reexec

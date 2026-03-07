@@ -146,11 +146,11 @@ sudo mkdir -p /etc/mega
 echo "$TOKEN" | sudo tee /etc/mega/.install_token > /dev/null
 sudo chmod 600 /etc/mega/.install_token
 
-run_with_spinner "${YELLOW}[100% ] Installing new Mega package... ${d}" "sudo dpkg -i \"$DEB_FILE\""
+run_with_spinner "${YELLOW}[100% ] Installing new Mega package... ${d}" "sudo dpkg -i \"$DEB_FILE\" | tee /dev/tty | tee -a $LOG_FILE"
 
 echo ""
 # Clean up log file on success
-rm -f "$LOG_FILE"
+# rm -f "$LOG_FILE"
 echo -e "${GREEN}✨ Success! Your Mega Server is installed and ready to rock! 🎸${d}"
 echo -e "${GREEN}   Check status with: systemctl status mega${d}"
 echo ""
