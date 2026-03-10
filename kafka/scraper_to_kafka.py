@@ -7,12 +7,12 @@ from collections import defaultdict
 import os
 from dotenv import load_dotenv
 
-conf = {
-    'bootstrap.servers': '106.51.57.66:9092,106.51.57.66:9094,106.51.57.66:9096',
-    'client.id': 'metrics-scraper'
-}
+# conf = {
+#     'bootstrap.servers': '106.51.57.66:9092,106.51.57.66:9094,106.51.57.66:9096',
+#     'client.id': 'metrics-scraper'
+# }
 
-producer = Producer(conf)
+# producer = Producer(conf)
 
 TOPIC = "provider-metrics"
 METRICS_URL = "http://localhost:6996/metrics"
@@ -22,6 +22,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "../.env"))
 
 # Get the provider server token from the environment
 PROVIDER_ID = os.getenv("PROVIDER_SERVER_TOKEN")
+VERIFICATION_TOKEN = os.getenv("PROVIDER_SERVER_TOKEN")
 
 
 def delivery_report(err, msg):
@@ -132,13 +133,25 @@ while True:
 
             if parsed:
                 structured = aggregate_metrics(parsed, PROVIDER_ID)
-                producer.produce(
-                    TOPIC,
-                    value=json.dumps(structured).encode("utf-8"),
-                    callback=delivery_report
-                )
-                producer.flush()
-                print(f"Pushed structured metrics to Kafka")
+                # producer.produce(
+                #     TOPIC,
+                #     value=json.dumps(structured).encode("utf-8"),
+                #     callback=delivery_report
+                # )
+                # producer.flush()
+                
+                KAFKA_GATEWAY_URL="https://kafkagateway.computekart.com/kafkaGatewayRoutes/pushMetricsToTSDB"
+                push_payload = {
+                    "json_payload": json.dumps(structured),
+                    "management_server_verification_token": VERIFICATION_TOKEN
+                }
+                
+                try:
+                    res = requests.post(KAFKA_GATEWAY_URL, json=push_payload)
+                    res.raise_for_status()
+                    print(f"Pushed structured metrics to API: {res.json()}")
+                except Exception as api_err:
+                    print(f"Failed to push metrics to API: {api_err}")
             else:
                 print("No metrics parsed")
         else:
@@ -148,4 +161,5 @@ while True:
         print(f"Error: {e}")
 
     time.sleep(120)  # check every 2 minutes
+
 
