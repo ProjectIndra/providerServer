@@ -132,7 +132,7 @@ while True:
             parsed = parse_prometheus_metrics(metrics_text)
 
             if parsed:
-                structured = aggregate_metrics(parsed, PROVIDER_ID)
+                structured = aggregate_metrics(parsed, VERIFICATION_TOKEN)
                 # producer.produce(
                 #     TOPIC,
                 #     value=json.dumps(structured).encode("utf-8"),
@@ -142,8 +142,7 @@ while True:
                 
                 KAFKA_GATEWAY_URL="https://kafkagateway.computekart.com/kafkaGatewayRoutes/pushMetricsToTSDB"
                 push_payload = {
-                    "json_payload": json.dumps(structured),
-                    "management_server_verification_token": VERIFICATION_TOKEN
+                    "json_payload": json.dumps(structured)
                 }
                 
                 try:
