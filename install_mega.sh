@@ -150,7 +150,7 @@ run_with_spinner "${YELLOW}[100% ] Installing new Mega package... ${d}" "sudo dp
 
 echo ""
 # Clean up log file on success
-# rm -f "$LOG_FILE"
+rm -f "$LOG_FILE"
 echo -e "${GREEN}✨ Success! Your Mega Server is installed and ready to rock! 🎸${d}"
 echo -e "${GREEN}   Check status with: systemctl status mega${d}"
 echo ""
