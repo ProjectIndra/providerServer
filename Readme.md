@@ -58,3 +58,12 @@ then run the following command to activate the virtual environment:
 #journalctl -u mega.service -b
 
 # curl -sL https://fileshare.computekart.com/install_mega.sh | sudo INSTALL_TOKEN=your_token bash
+
+# to expand the disk size of the qcow2 image, you can follow these steps:
+
+# qemu-img resize avinash.qcow2 +20G ( outside the vm )
+
+# inside the vm
+# lsblk
+# sudo resize2fs /dev/vda1
+# resize2fs /dev/vda1
