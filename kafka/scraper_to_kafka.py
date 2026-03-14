@@ -133,12 +133,6 @@ while True:
 
             if parsed:
                 structured = aggregate_metrics(parsed, VERIFICATION_TOKEN)
-                # producer.produce(
-                #     TOPIC,
-                #     value=json.dumps(structured).encode("utf-8"),
-                #     callback=delivery_report
-                # )
-                # producer.flush()
                 
                 KAFKA_GATEWAY_URL="https://kafkagateway.computekart.com/kafkaGatewayRoutes/pushMetricsToTSDB"
                 push_payload = {
@@ -146,7 +140,11 @@ while True:
                 }
                 
                 try:
-                    res = requests.post(KAFKA_GATEWAY_URL, json=push_payload)
+                    res = requests.post(
+                        KAFKA_GATEWAY_URL, 
+                        json=push_payload,
+                        headers={"Content-Type": "application/json"}
+                    )
                     res.raise_for_status()
                     print(f"Pushed structured metrics to API: {res.json()}")
                 except Exception as api_err:
